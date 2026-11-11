@@ -217,6 +217,19 @@ public class WndSettings extends WndTabbed {
 
 	private static class DisplayTab extends Component {
 
+		//its own little window: what is picked up on its own, and when not
+		private static void openDewWindow( final RedButton btn ){
+			ShatteredPixelDungeon.scene().addToFront(new WndAutoPickup(btn));
+		}
+
+		private static String dewLabel(){
+			if (!SPDSettings.autoDew() && !SPDSettings.autoSeeds()){
+				return Messages.get(DisplayTab.class, "auto_dew_short_off");
+			}
+			return Messages.get(DisplayTab.class, SPDSettings.autoDewMode() == SPDSettings.DEW_UNLESS_HUNTED
+					? "auto_dew_short_hunted" : "auto_dew_short_seen");
+		}
+
 		RenderedTextBlock title;
 		ColorBlock sep1;
 		CheckBox chkFullscreen;
@@ -356,6 +369,7 @@ public class WndSettings extends WndTabbed {
 			chkAugPops.checked(SPDSettings.augmentPops());
 			add(chkAugPops);
 
+
 		}
 
 		@Override
@@ -426,6 +440,9 @@ public class WndSettings extends WndTabbed {
 		ColorBlock sep2;
 		CheckBox chkFont;
 		CheckBox chkVibrate;
+		ColorBlock sep3;
+		RedButton btnAnimSpeed;
+		RedButton btnAutoDew;
 
 		@Override
 		protected void createChildren() {
@@ -659,6 +676,27 @@ public class WndSettings extends WndTabbed {
 				chkVibrate.checked(SPDSettings.vibration());
 			}
 			add(chkVibrate);
+
+			sep3 = new ColorBlock(1, 1, 0xFF000000);
+			add(sep3);
+
+			//animation speeds, set in a window of their own
+			btnAnimSpeed = new RedButton(Messages.get(DisplayTab.class, "anim_speed"), 7){
+				@Override
+				protected void onClick() {
+					ShatteredPixelDungeon.scene().addToFront(new WndAnimSpeed());
+				}
+			};
+			add(btnAnimSpeed);
+
+			//opens its own little window to pick when dew is collected
+			btnAutoDew = new RedButton(Messages.get(DisplayTab.class, "auto_dew_btn", DisplayTab.dewLabel()), 7){
+				@Override
+				protected void onClick() {
+					DisplayTab.openDewWindow(this);
+				}
+			};
+			add(btnAutoDew);
 		}
 
 		@Override
@@ -705,6 +743,19 @@ public class WndSettings extends WndTabbed {
 				chkFont.setRect(0, sep2.y + 1 + GAP, width, BTN_HEIGHT);
 				chkVibrate.setRect(0, chkFont.bottom() + GAP, width, BTN_HEIGHT);
 				height = chkVibrate.bottom();
+			}
+
+			sep3.size(width, 1);
+			sep3.y = height + GAP;
+
+			if (width > 200){
+				btnAnimSpeed.setRect(0, sep3.y + 1 + GAP, width/2-GAP/2, BTN_HEIGHT);
+				btnAutoDew.setRect(btnAnimSpeed.right() + GAP, btnAnimSpeed.top(), width/2-GAP/2, BTN_HEIGHT);
+				height = btnAnimSpeed.bottom();
+			} else {
+				btnAnimSpeed.setRect(0, sep3.y + 1 + GAP, width, BTN_HEIGHT);
+				btnAutoDew.setRect(0, btnAnimSpeed.bottom() + GAP, width, BTN_HEIGHT);
+				height = btnAutoDew.bottom();
 			}
 		}
 
@@ -1314,6 +1365,159 @@ public class WndSettings extends WndTabbed {
 				height = txtTranifex.bottom();
 			}
 
+		}
+	}
+	//the three animation speeds: actions, walking and projectiles (standing still is never sped up)
+	private static class WndAnimSpeed extends com.shatteredpixel.shatteredpixeldungeon.ui.Window {
+
+		private static final int W = 120;
+
+		WndAnimSpeed(){
+			super();
+			RenderedTextBlock title = PixelScene.renderTextBlock(Messages.get(DisplayTab.class, "anim_speed"), 9);
+			title.hardlight(TITLE_COLOR);
+			title.setPos((W - title.width())/2f, 2);
+			add(title);
+
+			OptionSlider action = new OptionSlider(Messages.get(DisplayTab.class, "anim_action"), "x1", "x10", 1, 10){
+				@Override
+				protected void onChange() {
+					com.watabou.utils.GameSettings.frameSpeed(getSelectedValue());
+				}
+			};
+			action.setSelectedValue(com.watabou.utils.GameSettings.frameSpeed());
+			action.setRect(0, title.bottom() + 4, W, SLIDER_HEIGHT);
+			add(action);
+
+			OptionSlider move = new OptionSlider(Messages.get(DisplayTab.class, "anim_move"), "x1", "x10", 1, 10){
+				@Override
+				protected void onChange() {
+					com.watabou.utils.GameSettings.moveSpeed(getSelectedValue());
+				}
+			};
+			move.setSelectedValue(com.watabou.utils.GameSettings.moveSpeed());
+			move.setRect(0, action.bottom() + GAP + 1, W, SLIDER_HEIGHT);
+			add(move);
+
+			OptionSlider missile = new OptionSlider(Messages.get(DisplayTab.class, "anim_missile"), "x1", "x10", 1, 10){
+				@Override
+				protected void onChange() {
+					com.watabou.utils.GameSettings.missileSpeed(getSelectedValue());
+				}
+			};
+			missile.setSelectedValue(com.watabou.utils.GameSettings.missileSpeed());
+			missile.setRect(0, move.bottom() + GAP + 1, W, SLIDER_HEIGHT);
+			add(missile);
+
+			CheckBox idle = new CheckBox(Messages.get(DisplayTab.class, "anim_idle")){
+				@Override
+				protected void onClick() {
+					super.onClick();
+					com.watabou.utils.GameSettings.idleFast(checked());
+				}
+			};
+			idle.checked(com.watabou.utils.GameSettings.idleFast());
+			idle.setRect(0, missile.bottom() + GAP + 1, W, BTN_HEIGHT);
+			add(idle);
+
+			resize(W, (int)Math.ceil(idle.bottom()));
+		}
+	}
+
+	//auto pickup: dew and seeds each switched on or off, and one button that flips between
+	// the two conditions under which nothing is picked up
+	private static class WndAutoPickup extends com.shatteredpixel.shatteredpixeldungeon.ui.Window {
+
+		private static final int W = 120;
+
+		private final RedButton opener;
+		private RenderedTextBlock title, status;
+		private CheckBox dew, seeds, floor;
+		private RedButton cond;
+
+		WndAutoPickup( RedButton opener ){
+			super();
+			this.opener = opener;
+
+			title = PixelScene.renderTextBlock(Messages.get(DisplayTab.class, "auto_dew"), 9);
+			title.hardlight(TITLE_COLOR);
+			add(title);
+
+			status = PixelScene.renderTextBlock(6);
+			add(status);
+
+			dew = new CheckBox(Messages.get(DisplayTab.class, "auto_pick_dew")){
+				@Override
+				protected void onClick() {
+					super.onClick();
+					SPDSettings.autoDew(checked());
+					refresh();
+				}
+			};
+			dew.checked(SPDSettings.autoDew());
+			add(dew);
+
+			seeds = new CheckBox(Messages.get(DisplayTab.class, "auto_pick_seeds")){
+				@Override
+				protected void onClick() {
+					super.onClick();
+					SPDSettings.autoSeeds(checked());
+					refresh();
+				}
+			};
+			seeds.checked(SPDSettings.autoSeeds());
+			add(seeds);
+
+			cond = new RedButton(""){
+				@Override
+				protected void onClick() {
+					SPDSettings.autoDewMode(SPDSettings.autoDewMode() == SPDSettings.DEW_UNLESS_SEEN
+							? SPDSettings.DEW_UNLESS_HUNTED : SPDSettings.DEW_UNLESS_SEEN);
+					refresh();
+				}
+			};
+			add(cond);
+
+			floor = new CheckBox(Messages.get(DisplayTab.class, "auto_pick_floor")){
+				@Override
+				protected void onClick() {
+					super.onClick();
+					SPDSettings.autoDewFloor(checked());
+					refresh();
+				}
+			};
+			floor.checked(SPDSettings.autoDewFloor());
+			add(floor);
+
+			refresh();
+		}
+
+		private void refresh(){
+			String condText = Messages.get(DisplayTab.class, SPDSettings.autoDewMode() == SPDSettings.DEW_UNLESS_HUNTED
+					? "auto_dew_hunted" : "auto_dew_seen");
+			cond.text(condText);
+
+			String now;
+			if (!SPDSettings.autoDew() && !SPDSettings.autoSeeds()){
+				now = Messages.get(DisplayTab.class, "auto_pick_none");
+			} else {
+				String what = SPDSettings.autoDew() && SPDSettings.autoSeeds()
+						? Messages.get(DisplayTab.class, "auto_pick_both")
+						: Messages.get(DisplayTab.class, SPDSettings.autoDew() ? "auto_pick_dew_only" : "auto_pick_seeds_only");
+				now = what + ", " + condText;
+				if (SPDSettings.autoDewFloor()) now += ", " + Messages.get(DisplayTab.class, "auto_pick_floor_short");
+			}
+			status.text(Messages.get(DisplayTab.class, "auto_pick_status", now), W);
+
+			if (opener != null) opener.text(Messages.get(DisplayTab.class, "auto_dew_btn", DisplayTab.dewLabel()));
+
+			title.setPos((W - title.width())/2f, 2);
+			status.setPos(0, title.bottom() + 4);
+			dew.setRect(0, status.bottom() + 4, W, BTN_HEIGHT);
+			seeds.setRect(0, dew.bottom() + GAP + 1, W, BTN_HEIGHT);
+			cond.setRect(0, seeds.bottom() + GAP + 1, W, BTN_HEIGHT);
+			floor.setRect(0, cond.bottom() + GAP + 1, W, BTN_HEIGHT);
+			resize(W, (int)Math.ceil(floor.bottom()));
 		}
 	}
 }

@@ -76,7 +76,7 @@ public class Lightning extends Group {
 	
 	@Override
 	public void update() {
-		if ((life -= Game.elapsed) < 0) {
+		if ((life -= Game.elapsed * com.watabou.utils.GameSettings.missileSpeed()) < 0) {
 			
 			killAndErase();
 			if (callback != null) {

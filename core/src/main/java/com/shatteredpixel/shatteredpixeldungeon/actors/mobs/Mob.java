@@ -1062,6 +1062,13 @@ public abstract class Mob extends Char {
 
 		//after the body is gone, so effects can use the cell
 		if (augKill) com.shatteredpixel.shatteredpixeldungeon.augments.Augs.onKill(this);
+		if (com.shatteredpixel.shatteredpixeldungeon.augments2.Aug2.active()){
+			com.shatteredpixel.shatteredpixeldungeon.augments2.Aug2.onKill(this, cause);
+			if (this instanceof Goo || this instanceof Tengu || this instanceof DM300
+					|| this instanceof DwarfKing || this instanceof YogDzewa){
+				com.shatteredpixel.shatteredpixeldungeon.augments2.Aug2.onBossKill();
+			}
+		}
 		//each of the five great bosses grants a prism choice
 		if (com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active() && (this instanceof Goo || this instanceof Tengu || this instanceof DM300
 				|| this instanceof DwarfKing || this instanceof YogDzewa)){

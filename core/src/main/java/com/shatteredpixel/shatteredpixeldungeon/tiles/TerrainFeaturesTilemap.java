@@ -53,7 +53,29 @@ public class TerrainFeaturesTilemap extends DungeonTilemap {
 		instance = this;
 	}
 
+	//a blank tile on the sheet. Empty tiles beside tall grass are given it, so there is something
+	// drawn there for the grass to lean into
+	private static final int BLANK = 255;
+
 	protected int getTileVisual(int pos, int tile, boolean flat){
+		int visual = ownVisual(pos, tile, flat);
+		if (visual < 0 && besideTallGrass(pos)) return BLANK;
+		return visual;
+	}
+
+	private boolean besideTallGrass( int pos ){
+		if (!com.shatteredpixel.shatteredpixeldungeon.atmosphere.Surface.grassLeans() || map == null) return false;
+		int x = pos % mapWidth;
+		return (x > 0 && map[pos - 1] == Terrain.HIGH_GRASS) || (x < mapWidth - 1 && map[pos + 1] == Terrain.HIGH_GRASS);
+	}
+
+	private static int grassStage(){
+		int stage = (Dungeon.depth-1)/5;
+		if (Dungeon.depth == 21 && Dungeon.level instanceof LastShopLevel) stage--;
+		return Math.min(stage, 4);
+	}
+
+	private int ownVisual(int pos, int tile, boolean flat){
 		if (traps.get(pos) != null){
 			Trap trap = traps.get(pos);
 			if (!trap.visible)
@@ -187,4 +209,10 @@ public class TerrainFeaturesTilemap extends DungeonTilemap {
 		} );
 	}
 
+
+	//grass is drawn with its own shading
+	@Override
+	protected com.watabou.noosa.NoosaScript script() {
+		return com.shatteredpixel.shatteredpixeldungeon.atmosphere.Surface.grass(0, texture, 128 + 16*grassStage(), 128 + 16*grassStage() + 1);
+	}
 }

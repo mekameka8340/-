@@ -163,6 +163,10 @@ public class Atmosphere extends Image {
 		float r, g, b;
 		float flickerAmp, flickerSpeed, phase;
 		boolean hot;           //produces heat haze
+		boolean shines;        //a visible source: glitters on water below it and has a glow of its own
+		float reach;           //how far below it the open floor runs before a wall, in tiles
+		float srcY;            //where the flame or crystal itself is drawn, in tiles
+		boolean overWater;     //some of that floor is water
 
 		//occlusion box, centered on the origin cell. null means no occlusion
 		boolean[] vis;
@@ -217,18 +221,22 @@ public class Atmosphere extends Image {
 
 			if (prison && t == Terrain.WALL_DECO){
 				//wall torch, shines out of the wall
-				addStatic(level, i, cx + 0.5f, cy + 1.0f, belowIfOpen(level, i),
-						4.5f, 0.80f, 1.00f, 0.68f, 0.34f, 0.12f, 9f).hot = true;
+				StaticLight torch = addStatic(level, i, cx + 0.5f, cy + 1.0f, belowIfOpen(level, i),
+						4.5f, 0.80f, 1.00f, 0.68f, 0.34f, 0.12f, 9f);
+				torch.hot = true;
+				shines(level, torch, 0.45f);
 
 			} else if (caves && t == Terrain.WALL_DECO){
 				//glowing crystal vein
-				addStatic(level, i, cx + 0.5f, cy + 0.9f, belowIfOpen(level, i),
-						2.6f, 0.35f, 0.45f, 0.75f, 1.00f, 0.25f, 1.5f);
+				shines(level, addStatic(level, i, cx + 0.5f, cy + 0.9f, belowIfOpen(level, i),
+						2.6f, 0.35f, 0.45f, 0.75f, 1.00f, 0.25f, 1.5f), 0.55f);
 
 			} else if (city && (t == Terrain.REGION_DECO || t == Terrain.REGION_DECO_ALT)){
 				//green brazier flame
-				addStatic(level, i, cx + 0.5f, cy + 0.3f, i,
-						3.4f, 0.60f, 0.40f, 1.00f, 0.45f, 0.15f, 9f).hot = true;
+				StaticLight brazier = addStatic(level, i, cx + 0.5f, cy + 0.3f, i,
+						3.4f, 0.60f, 0.40f, 1.00f, 0.45f, 0.15f, 9f);
+				brazier.hot = true;
+				shines(level, brazier, 0.3f);
 
 			} else if (halls && t == Terrain.WATER){
 				//streams of fire
@@ -244,12 +252,12 @@ public class Atmosphere extends Image {
 						2.2f, 0.30f, 0.35f, 0.65f, 1.00f, 0.10f, 1.2f);
 
 			} else if (t == Terrain.ALCHEMY){
-				addStatic(level, i, cx + 0.5f, cy + 0.5f, i,
-						2.2f, 0.35f, 0.75f, 0.45f, 1.00f, 0.12f, 4f);
+				shines(level, addStatic(level, i, cx + 0.5f, cy + 0.5f, i,
+						2.2f, 0.35f, 0.75f, 0.45f, 1.00f, 0.12f, 4f), 0.3f);
 
 			} else if (t == Terrain.MINE_CRYSTAL){
-				addStatic(level, i, cx + 0.5f, cy + 0.5f, i,
-						2.4f, 0.40f, 0.50f, 0.85f, 1.00f, 0.25f, 1.3f);
+				shines(level, addStatic(level, i, cx + 0.5f, cy + 0.5f, i,
+						2.4f, 0.40f, 0.50f, 0.85f, 1.00f, 0.25f, 1.3f), 0.3f);
 
 			} else if (t == Terrain.PEDESTAL){
 				addStatic(level, i, cx + 0.5f, cy + 0.4f, i,
@@ -261,6 +269,27 @@ public class Atmosphere extends Image {
 						3.0f, 0.35f, 1.00f, 0.95f, 0.80f, 0f, 0f);
 			}
 		}
+	}
+
+	//marks a light as a source one can see, and measures the open floor straight below it:
+	// that is where its glitter falls if there is water. up: how far above its light's centre the flame sits
+	private void shines( Level level, StaticLight l, float up ){
+		l.shines = true;
+		l.srcY = l.y - up;
+		int w = level.width();
+		int cx = (int)Math.floor(l.x);
+		int cy = (int)Math.floor(l.y);
+		int n = 0;
+		while (n < Math.ceil(l.radius) + 1){
+			int y2 = cy + n;
+			if (cx < 0 || cx >= w || y2 < 0 || y2 >= level.height()) break;
+			int c = y2 * w + cx;
+			//the cell the light itself sits in doesn't block its own light
+			if (level.losBlocking[c] && c != l.cell) break;
+			if (level.water[c]) l.overWater = true;
+			n++;
+		}
+		l.reach = Math.max(0f, cy + n - l.y);
 	}
 
 	private static int belowIfOpen( Level level, int cell ){
@@ -598,6 +627,8 @@ public class Atmosphere extends Image {
 		Arrays.fill(accG, 0f);
 		Arrays.fill(accB, 0f);
 		heatCount = 0;
+		Surface.glintCount = 0;
+		glowCount = 0;
 
 		addHeroLight(level);
 		addStaticLights(level);
@@ -607,6 +638,48 @@ public class Atmosphere extends Image {
 		addValuableLights(level);
 
 		writeTexture(level);
+	}
+
+	//the lights whose glitter shows on the water, nearest the middle of the view first
+	private final float[] glintScore = new float[Surface.MAX_GLINTS];
+
+	private void offerGlint( StaticLight l, float flicker ){
+		float mx = (viewL + viewR) * 0.5f, my = (viewT + viewB) * 0.5f;
+		float score = -((l.x - mx) * (l.x - mx) + (l.y - my) * (l.y - my));
+		int slot;
+		if (Surface.glintCount < Surface.MAX_GLINTS){
+			slot = Surface.glintCount++;
+		} else {
+			slot = 0;
+			for (int i = 1; i < Surface.MAX_GLINTS; i++) if (glintScore[i] < glintScore[slot]) slot = i;
+			if (glintScore[slot] >= score) return;
+		}
+		glintScore[slot] = score;
+		float ts = DungeonTilemap.SIZE;
+		Surface.glintPos[slot*4]   = l.x * ts;
+		Surface.glintPos[slot*4+1] = l.y * ts;
+		Surface.glintPos[slot*4+2] = Math.min(l.reach, l.radius) * ts;
+		Surface.glintPos[slot*4+3] = 2.2f;
+		Surface.glintCol[slot*4]   = l.r;
+		Surface.glintCol[slot*4+1] = l.g;
+		Surface.glintCol[slot*4+2] = l.b;
+		Surface.glintCol[slot*4+3] = Math.min(1f, l.intensity * 1.1f) * flicker;
+	}
+
+	//the visible sources in view this frame, for the glow drawn around each: x, y in world pixels,
+	// colour, strength, size in tiles
+	public static final int MAX_GLOWS = 16;
+	public static final float[] glows = new float[MAX_GLOWS * 7];
+	public static int glowCount = 0;
+
+	private void offerGlow( StaticLight l, float flicker ){
+		if (glowCount >= MAX_GLOWS) return;
+		int o = glowCount++ * 7;
+		glows[o]   = l.x * DungeonTilemap.SIZE;
+		glows[o+1] = l.srcY * DungeonTilemap.SIZE;
+		glows[o+2] = l.r; glows[o+3] = l.g; glows[o+4] = l.b;
+		glows[o+5] = l.intensity * flicker;
+		glows[o+6] = l.radius;
 	}
 
 	private boolean onScreen( float x, float y, float radius ){
@@ -663,6 +736,11 @@ public class Atmosphere extends Image {
 
 			if (l.hot && level.heroFOV[l.cell]){
 				offerHeat(l.x, l.y - 0.4f, 1.1f, 0.5f);
+			}
+
+			if (l.shines){
+				if (l.overWater && l.reach > 0.5f) offerGlint(l, f);
+				if (level.heroFOV[l.cell]) offerGlow(l, f);
 			}
 		}
 	}

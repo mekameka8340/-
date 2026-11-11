@@ -81,7 +81,7 @@ public class Chains extends Group {
 
 	@Override
 	public void update() {
-		if ((spent += Game.elapsed) > duration) {
+		if ((spent += Game.elapsed * com.watabou.utils.GameSettings.missileSpeed()) > duration) {
 
 			killAndErase();
 			if (callback != null) {

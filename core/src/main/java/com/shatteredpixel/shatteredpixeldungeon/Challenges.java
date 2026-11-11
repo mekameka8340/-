@@ -38,8 +38,16 @@ public class Challenges {
 	public static final int STRONGER_BOSSES 	= 256;
 	public static final int AUGMENTS        	= 512;
 
-	public static final int MAX_VALUE           = 1023;
-	public static final int MAX_CHALS           = 10;
+	public static final int AUGMENTS_2      	= 1024;
+
+	public static final int MAX_VALUE           = 2047;
+	public static final int MAX_CHALS           = 11;
+
+	//the two augment challenges change the same thing in different ways, only one can be on
+	public static int sanitize( int mask ){
+		if ((mask & AUGMENTS) != 0 && (mask & AUGMENTS_2) != 0) mask &= ~AUGMENTS_2;
+		return mask;
+	}
 
 	public static final String[] NAME_IDS = {
 			"champion_enemies",
@@ -51,11 +59,12 @@ public class Challenges {
 			"swarm_intelligence",
 			"darkness",
 			"no_scrolls",
-			"augments"
+			"augments",
+			"augments2"
 	};
 
 	public static final int[] MASKS = {
-			CHAMPION_ENEMIES, STRONGER_BOSSES, NO_FOOD, NO_ARMOR, NO_HEALING, NO_HERBALISM, SWARM_INTELLIGENCE, DARKNESS, NO_SCROLLS, AUGMENTS
+			CHAMPION_ENEMIES, STRONGER_BOSSES, NO_FOOD, NO_ARMOR, NO_HEALING, NO_HERBALISM, SWARM_INTELLIGENCE, DARKNESS, NO_SCROLLS, AUGMENTS, AUGMENTS_2
 	};
 
 	public static int activeChallenges(){

@@ -1166,6 +1166,11 @@ public abstract class Level implements Bundlable {
 	}
 	
 	public void occupyCell( Char ch ){
+		if (com.shatteredpixel.shatteredpixeldungeon.augments2.Aug2.active()){
+			com.shatteredpixel.shatteredpixeldungeon.augments2.Aug2.onOccupy( ch );
+			//a mine may have finished it off
+			if (!ch.isAlive()) return;
+		}
 		if (!ch.isImmune(Web.class) && Blob.volumeAt(ch.pos, Web.class) > 0){
 			blobs.get(Web.class).clear(ch.pos);
 			Web.affectChar( ch );
@@ -1225,6 +1230,11 @@ public abstract class Level implements Bundlable {
 
 		if (ch.isAlive() && ch instanceof Piranha && !water[ch.pos]){
 			((Piranha) ch).dieOnLand();
+		}
+
+		//dew lying on the floor, taken along the way if the player's setting says so
+		if (ch == Dungeon.hero && ch.isAlive()){
+			com.shatteredpixel.shatteredpixeldungeon.items.Dewdrop.walkedOver(Dungeon.hero, ch.pos);
 		}
 	}
 	

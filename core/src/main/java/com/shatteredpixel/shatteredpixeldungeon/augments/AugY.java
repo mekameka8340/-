@@ -159,7 +159,8 @@ public class AugY {
 					@Override
 					public void update() {
 						super.update();
-						time += Game.elapsed;
+						//keeps pace with the player's action speed setting
+						time += Game.elapsed * com.watabou.utils.GameSettings.frameSpeed();
 						while (!done && time >= interval && i < count){
 							time -= interval;
 							boolean go;

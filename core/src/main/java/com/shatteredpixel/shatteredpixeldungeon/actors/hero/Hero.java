@@ -263,6 +263,9 @@ public class Hero extends Char {
 		//with the augment challenge levels give no health, augments do
 		if (com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()){
 			HT = com.shatteredpixel.shatteredpixeldungeon.augments.Augs.maxHP(20 + HTBoost);
+		} else if (com.shatteredpixel.shatteredpixeldungeon.augments2.Aug2.active()){
+			//the second augment challenge: levels give no health either
+			HT = 20 + HTBoost;
 		} else {
 			HT = 20 + 5*(lvl-1) + HTBoost;
 		}
@@ -671,6 +674,7 @@ public class Hero extends Char {
 		}
 
 		dr += com.shatteredpixel.shatteredpixeldungeon.augments.Augs.armorBonus();
+		dr = com.shatteredpixel.shatteredpixeldungeon.augments2.Aug2.armor( this, dr );
 		
 		return dr;
 	}
@@ -1705,6 +1709,7 @@ public class Hero extends Char {
 			dmg = com.shatteredpixel.shatteredpixeldungeon.augments.Augs.reduceDamage( this, dmg, src );
 			dmg = com.shatteredpixel.shatteredpixeldungeon.augments.Augs.lastStand( this, dmg );
 		}
+		if (com.shatteredpixel.shatteredpixeldungeon.augments2.Aug2.active()) dmg = com.shatteredpixel.shatteredpixeldungeon.augments2.Aug2.reduceDamage( this, dmg, src );
 
 		int preHP = HP + shielding();
 		if (src instanceof Hunger) preHP -= shielding();
@@ -1933,7 +1938,12 @@ public class Hero extends Char {
 			}
 			
 			sprite.move(pos, step);
-			move(step);
+			Dewdrop.heroStep = step;
+			try {
+				move(step);
+			} finally {
+				Dewdrop.heroStep = -1;
+			}
 
 			spend( delay / speed() );
 			
@@ -2114,6 +2124,7 @@ public class Hero extends Char {
 					attackSkill++;
 					defenseSkill++;
 				} else {
+					com.shatteredpixel.shatteredpixeldungeon.augments2.Aug2.onLevelUp( this );
 					updateHT( true );
 					attackSkill++;
 					defenseSkill++;
@@ -2136,6 +2147,11 @@ public class Hero extends Char {
 				GLog.newLine();
 				if (com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()){
 					GLog.p( "레벨 업! 명중과 회피가 올랐습니다. 증강을 하나 선택하세요." );
+				} else if (com.shatteredpixel.shatteredpixeldungeon.augments2.Aug2.active()){
+					int next = com.shatteredpixel.shatteredpixeldungeon.augments2.Aug2.nextPickLevel( lvl );
+					if (com.shatteredpixel.shatteredpixeldungeon.augments2.Aug2.pickLevel( lvl )) GLog.p( "레벨 업! 명중과 회피가 올랐습니다. 카드를 하나 고르세요." );
+					else if (next > 0)              GLog.p( "레벨 업! 명중과 회피가 올랐습니다. 다음 선택은 레벨 " + next + "입니다." );
+					else                            GLog.p( "레벨 업! 명중과 회피가 올랐습니다." );
 				} else {
 					GLog.p( Messages.get(this, "new_level") );
 				}

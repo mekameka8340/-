@@ -126,4 +126,10 @@ public class DungeonTerrainTilemap extends DungeonTilemap {
 	protected boolean needsRender(int pos) {
 		return super.needsRender(pos) && data[pos] != DungeonTileSheet.WATER;
 	}
+
+	//the blades painted into the floor under moving grass are taken out, see Surface.ground()
+	@Override
+	protected com.watabou.noosa.NoosaScript script() {
+		return com.shatteredpixel.shatteredpixeldungeon.atmosphere.Surface.ground();
+	}
 }

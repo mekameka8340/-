@@ -141,7 +141,11 @@ public class HighGrass {
 					if (Random.Float() < PetrifiedSeed.stoneInsteadOfSeedChance()) {
 						level.drop(Generator.randomUsingDefaults(Generator.Category.STONE), pos).sprite.drop();
 					} else {
-						level.drop(Generator.random(Generator.Category.SEED), pos).sprite.drop();
+						com.shatteredpixel.shatteredpixeldungeon.items.Item seed = Generator.random(Generator.Category.SEED);
+						//straight into the bag when the hero tramples it, if the auto pickup setting says so
+						if (ch != Dungeon.hero || !Dewdrop.steppingOnto(pos) || !Dewdrop.takeSeed(Dungeon.hero, seed, pos)){
+							level.drop(seed, pos).sprite.drop();
+						}
 					}
 				}
 				
@@ -154,7 +158,23 @@ public class HighGrass {
 				}
 
 				if (Random.Float() < lootChance) {
-					level.drop(new Dewdrop(), pos).sprite.drop();
+					//auto collect: only the hero's own steps, with room in the waterskin and no enemy in sight
+					com.shatteredpixel.shatteredpixeldungeon.items.Waterskin flask = Dungeon.hero == null ? null
+							: Dungeon.hero.belongings.getItem(com.shatteredpixel.shatteredpixeldungeon.items.Waterskin.class);
+					Dewdrop dew = new Dewdrop();
+					if (ch == Dungeon.hero && Dewdrop.steppingOnto(pos) && com.shatteredpixel.shatteredpixeldungeon.SPDSettings.autoDew() && flask != null && !flask.isFull() && Dewdrop.autoCollectNow()
+							&& !com.shatteredpixel.shatteredpixeldungeon.Challenges.isItemBlocked(dew)){
+						//straight into the waterskin. Picking it up still takes the hero a turn, as picking it up
+						// by hand would; this happens in the middle of the hero's step, so the turn is added to it
+						Dungeon.hero.spend(1f);
+						com.shatteredpixel.shatteredpixeldungeon.journal.Catalog.setSeen(Dewdrop.class);
+						com.shatteredpixel.shatteredpixeldungeon.Statistics.itemTypesDiscovered.add(Dewdrop.class);
+						flask.collectDew(dew);
+						com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene.pickUp(dew, pos);
+						com.watabou.noosa.audio.Sample.INSTANCE.play(com.shatteredpixel.shatteredpixeldungeon.Assets.Sounds.DEWDROP);
+					} else {
+						level.drop(dew, pos).sprite.drop();
+					}
 				}
 			}
 

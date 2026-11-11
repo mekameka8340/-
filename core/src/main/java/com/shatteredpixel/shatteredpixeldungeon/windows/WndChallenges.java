@@ -38,7 +38,6 @@ public class WndChallenges extends Window {
 
 	private static final int WIDTH		= 120;
 	private static final int TTL_HEIGHT = 16;
-	private static final int BTN_HEIGHT = 16;
 	private static final int GAP        = 1;
 
 	private boolean editable;
@@ -61,12 +60,30 @@ public class WndChallenges extends Window {
 
 		boxes = new ArrayList<>();
 
+		//with eleven rows the list would not fit a short landscape screen at full height
+		int rows = Challenges.NAME_IDS.length;
+		float room = PixelScene.uiCamera.height - 24 - TTL_HEIGHT - (rows - 1) * GAP;
+		final float BTN_HEIGHT = Math.max(12, Math.min(16, (float)Math.floor(room / rows)));
+
 		float pos = TTL_HEIGHT;
 		for (int i=0; i < Challenges.NAME_IDS.length; i++) {
 
 			final String challenge = Challenges.NAME_IDS[i];
+			final int mask = Challenges.MASKS[i];
 			
-			CheckBox cb = new CheckBox( Messages.titleCase(Messages.get(Challenges.class, challenge)) );
+			CheckBox cb = new CheckBox( Messages.titleCase(Messages.get(Challenges.class, challenge)) ){
+				@Override
+				protected void onClick() {
+					super.onClick();
+					//the two augment challenges cannot be on together
+					if (checked() && (mask == Challenges.AUGMENTS || mask == Challenges.AUGMENTS_2)){
+						int other = mask == Challenges.AUGMENTS ? Challenges.AUGMENTS_2 : Challenges.AUGMENTS;
+						for (int j = 0; j < boxes.size(); j++){
+							if (Challenges.MASKS[j] == other) boxes.get(j).checked(false);
+						}
+					}
+				}
+			};
 			cb.checked( (checked & Challenges.MASKS[i]) != 0 );
 			cb.active = editable;
 

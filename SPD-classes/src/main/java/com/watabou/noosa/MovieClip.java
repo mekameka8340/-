@@ -54,12 +54,17 @@ public class MovieClip extends Image {
 		return curAnim != null && curAnim.looped;
 	}
 	
+	//how fast the current animation plays; characters speed some of theirs up by the player's setting
+	protected float animSpeed(){
+		return 1f;
+	}
+
 	protected synchronized void updateAnimation() {
 		if (curAnim != null && curAnim.delay > 0 && (curAnim.looped || !finished)) {
 			
 			int lastFrame = curFrame;
 			
-			frameTimer += Game.elapsed;
+			frameTimer += Game.elapsed * animSpeed();
 			while (frameTimer > curAnim.delay) {
 				frameTimer -= curAnim.delay;
 				if (curFrame >= curAnim.frames.length - 1) {

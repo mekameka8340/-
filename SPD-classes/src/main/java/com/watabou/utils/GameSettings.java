@@ -138,4 +138,55 @@ public class GameSettings {
 		get().flush();
 	}
 	
+	//animation speeds, x1 to x10: actions (attacks, casting...), walking, and projectiles.
+	//Read every frame, so kept in memory and only written to the settings file when changed
+	public static final String KEY_FRAME_SPEED = "frame_speed";
+	public static final String KEY_MOVE_SPEED = "move_anim_speed";
+	public static final String KEY_MISSILE_SPEED = "missile_speed";
+	private static int frameSpeed = -1, moveSpeed = -1, missileSpeed = -1;
+
+	public static int frameSpeed(){
+		if (frameSpeed < 0) frameSpeed = getInt(KEY_FRAME_SPEED, 1, 1, 10);
+		return frameSpeed;
+	}
+
+	public static void frameSpeed( int value ){
+		frameSpeed = (int)GameMath.gate(1, value, 10);
+		put(KEY_FRAME_SPEED, frameSpeed);
+	}
+
+	public static int moveSpeed(){
+		if (moveSpeed < 0) moveSpeed = getInt(KEY_MOVE_SPEED, 1, 1, 10);
+		return moveSpeed;
+	}
+
+	public static void moveSpeed( int value ){
+		moveSpeed = (int)GameMath.gate(1, value, 10);
+		put(KEY_MOVE_SPEED, moveSpeed);
+	}
+
+	//whether the standing (idle) animation follows the action speed too
+	public static final String KEY_IDLE_FAST = "idle_anim_fast";
+	private static int idleFast = -1;
+
+	public static boolean idleFast(){
+		if (idleFast < 0) idleFast = getBoolean(KEY_IDLE_FAST, false) ? 1 : 0;
+		return idleFast == 1;
+	}
+
+	public static void idleFast( boolean value ){
+		idleFast = value ? 1 : 0;
+		put(KEY_IDLE_FAST, value);
+	}
+
+	public static int missileSpeed(){
+		if (missileSpeed < 0) missileSpeed = getInt(KEY_MISSILE_SPEED, frameSpeed(), 1, 10);
+		return missileSpeed;
+	}
+
+	public static void missileSpeed( int value ){
+		missileSpeed = (int)GameMath.gate(1, value, 10);
+		put(KEY_MISSILE_SPEED, missileSpeed);
+	}
+
 }

@@ -214,6 +214,8 @@ public class GameScene extends PixelScene {
 	private static boolean invVisible = true;
 
 	private Toolbar toolbar;
+	private Group props;
+	private com.shatteredpixel.shatteredpixeldungeon.augments2.SkillBar skillBar;
 	private Toast prompt;
 
 	private AttackIndicator attack;
@@ -316,6 +318,10 @@ public class GameScene extends PixelScene {
 
 		add( floorLayer );
 
+		//things lying on the floor that are not items: under the creatures, over the stains
+		props = new Group();
+		add( props );
+
 		heaps = new Group();
 		add( heaps );
 		
@@ -380,8 +386,10 @@ public class GameScene extends PixelScene {
 			public void update() {
 				super.update();
 				com.shatteredpixel.shatteredpixeldungeon.augments.Augs.checkPending();
+				com.shatteredpixel.shatteredpixeldungeon.augments2.Aug2.checkPending();
 			}
 		});
+		com.shatteredpixel.shatteredpixeldungeon.augments2.Aug2.onScene();
 		add( new com.shatteredpixel.shatteredpixeldungeon.augments.AugFx.Aura() );
 
 		fog = new FogOfWar( Dungeon.level.width(), Dungeon.level.height() );
@@ -569,6 +577,12 @@ public class GameScene extends PixelScene {
 		toolbar = new Toolbar();
 		toolbar.camera = uiCamera;
 		add( toolbar );
+
+		if (com.shatteredpixel.shatteredpixeldungeon.augments2.Aug2.active()){
+			skillBar = new com.shatteredpixel.shatteredpixeldungeon.augments2.SkillBar();
+			skillBar.camera = uiCamera;
+			add( skillBar );
+		}
 
 		if (uiSize == 2) {
 			inventory = new InventoryPane();
@@ -1035,6 +1049,17 @@ public class GameScene extends PixelScene {
 		float tagLeft = tagsOnLeft ? 0 : uiCamera.width - tagWidth;
 
 		float y = SPDSettings.interfaceSize() == 0 ? scene.toolbar.top()-2 : scene.status.top()-2;
+		//the skill buttons sit in a row right above the toolbar, the log moves up to make room
+		if (scene.skillBar != null){
+			float sw = scene.skillBar.width(), sh = scene.skillBar.height();
+			if (SPDSettings.interfaceSize() == 0){
+				float sx = tagsOnLeft ? uiCamera.width - insets.right - sw - 1 : insets.left + 1;
+				scene.skillBar.setPos( sx, scene.toolbar.top() - sh - 1 );
+				y -= sh + 1;
+			} else {
+				scene.skillBar.setPos( (uiCamera.width - sw) / 2f, scene.toolbar.top() - sh - 1 );
+			}
+		}
 		if (SPDSettings.interfaceSize() == 0){
 			if (tagsOnLeft) {
 				scene.log.setRect(tagWidth, y, uiCamera.width - tagWidth - insets.right, 0);
@@ -1171,7 +1196,8 @@ public class GameScene extends PixelScene {
 				}
 			};
 			prompt.camera = uiCamera;
-			prompt.setPos( (uiCamera.width - prompt.width()) / 2, uiCamera.height - 60 );
+			//with the skill buttons above the toolbar the prompt goes above them
+			prompt.setPos( (uiCamera.width - prompt.width()) / 2, uiCamera.height - 60 - (skillBar != null ? skillBar.height() + 2 : 0) );
 
 			if (inventory != null && inventory.visible && prompt.right() > inventory.left() - 10){
 				prompt.setPos(inventory.left() - prompt.width() - 10, prompt.top());
@@ -1252,6 +1278,22 @@ public class GameScene extends PixelScene {
 	
 	public static void effect( Visual effect ) {
 		if (scene != null) scene.effects.add( effect );
+	}
+
+	public static void prop( Visual v ) {
+		if (scene != null) scene.props.add( v );
+	}
+
+	//something drawn over the whole interface, in interface coordinates
+	public static void overlay( Gizmo g ) {
+		if (scene != null) {
+			g.camera = uiCamera;
+			scene.add( g );
+		}
+	}
+
+	public static boolean toolbarShown() {
+		return scene != null && scene.toolbar != null && scene.toolbar.visible;
 	}
 
 	public static void effectOverFog( Visual effect ) {

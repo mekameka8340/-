@@ -126,10 +126,10 @@ public class MagicMissile extends Emitter {
 		height = 0;
 		
 		PointF d = PointF.diff( to, from );
-		PointF speed = new PointF( d ).normalize().scale( SPEED );
+		PointF speed = new PointF( d ).normalize().scale( SPEED * com.watabou.utils.GameSettings.missileSpeed() );
 		sx = speed.x;
 		sy = speed.y;
-		time = d.length() / SPEED;
+		time = d.length() / (SPEED * com.watabou.utils.GameSettings.missileSpeed());
 
 		//for now all specks share the same size and volume, this can easily be customized later if needed
 		if (type >= SPECK){
@@ -278,6 +278,7 @@ public class MagicMissile extends Emitter {
 	}
 	
 	public void setSpeed( float newSpeed ){
+		newSpeed *= com.watabou.utils.GameSettings.missileSpeed();
 		PointF d = PointF.diff( to, new PointF(x, y) );
 		PointF speed = new PointF( d ).normalize().scale( newSpeed );
 		sx = speed.x;

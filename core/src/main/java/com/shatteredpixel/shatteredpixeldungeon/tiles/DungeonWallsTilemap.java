@@ -36,8 +36,23 @@ public class DungeonWallsTilemap extends DungeonTilemap {
 		map( Dungeon.level.map, Dungeon.level.width() );
 	}
 
+	//a blank tile, the same one on every region's sheet. Drawn beside the overhanging tips of tall grass
+	// so they have something to lean into
+	private static final int BLANK = 15;
+
 	@Override
 	protected int getTileVisual(int pos, int tile, boolean flat){
+		int visual = ownVisual(pos, tile, flat);
+		if (visual < 0 && !flat && com.shatteredpixel.shatteredpixeldungeon.atmosphere.Surface.grassLeans()
+				&& map != null && pos + mapWidth < size){
+			int below = pos + mapWidth;
+			int x = pos % mapWidth;
+			if ((x > 0 && map[below - 1] == Terrain.HIGH_GRASS) || (x < mapWidth - 1 && map[below + 1] == Terrain.HIGH_GRASS)) return BLANK;
+		}
+		return visual;
+	}
+
+	private int ownVisual(int pos, int tile, boolean flat){
 
 		if (flat) return -1;
 
@@ -129,4 +144,10 @@ public class DungeonWallsTilemap extends DungeonTilemap {
 		return true;
 	}
 	
+
+	//grass is drawn with its own shading
+	@Override
+	protected com.watabou.noosa.NoosaScript script() {
+		return com.shatteredpixel.shatteredpixeldungeon.atmosphere.Surface.grass(1, texture, DungeonTileSheet.HIGH_GRASS_OVERHANG, DungeonTileSheet.HIGH_GRASS_OVERHANG_ALT);
+	}
 }

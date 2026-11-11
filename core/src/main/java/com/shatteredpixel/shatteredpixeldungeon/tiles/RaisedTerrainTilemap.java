@@ -37,8 +37,20 @@ public class RaisedTerrainTilemap extends DungeonTilemap {
 
 	public static HashSet<Integer> skipCells = new HashSet<>();
 
+	//a blank tile on the sheet, drawn beside tall grass so the grass has something to lean into
+	private static final int BLANK = 31;
+
 	@Override
 	protected int getTileVisual(int pos, int tile, boolean flat) {
+		int visual = ownVisual(pos, tile, flat);
+		if (visual < 0 && !flat && com.shatteredpixel.shatteredpixeldungeon.atmosphere.Surface.grassLeans() && map != null){
+			int x = pos % mapWidth;
+			if ((x > 0 && map[pos - 1] == Terrain.HIGH_GRASS) || (x < mapWidth - 1 && map[pos + 1] == Terrain.HIGH_GRASS)) return BLANK;
+		}
+		return visual;
+	}
+
+	private int ownVisual(int pos, int tile, boolean flat) {
 		
 		if (flat) return -1;
 
@@ -64,5 +76,11 @@ public class RaisedTerrainTilemap extends DungeonTilemap {
 		}
 		
 		return -1;
+	}
+
+	//grass is drawn with its own shading
+	@Override
+	protected com.watabou.noosa.NoosaScript script() {
+		return com.shatteredpixel.shatteredpixeldungeon.atmosphere.Surface.grass(0, texture, ((Dungeon.depth-1)/5)*4, ((Dungeon.depth-1)/5)*4 + 2);
 	}
 }

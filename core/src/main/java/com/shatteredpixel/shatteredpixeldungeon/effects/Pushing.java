@@ -99,11 +99,13 @@ public class Pushing extends Actor {
 
 	public class Effect extends Visual {
 
-		private static final float DELAY = 0.15f;
+		private static final float BASE_DELAY = 0.15f;
 		
 		private PointF end;
 		
 		private float delay;
+		//the player's move speed setting shortens the push too
+		private final float DELAY = Effect.BASE_DELAY / com.watabou.utils.GameSettings.moveSpeed();
 		
 		public Effect() {
 			super( 0, 0, 0, 0 );

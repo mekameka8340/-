@@ -215,13 +215,23 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 	public void idle() {
 		play(idle);
 	}
+
+	//the player's animation speeds: standing about stays as it is, walking follows the walking speed,
+	// everything else (attacks, casting, dying...) the action speed
+	@Override
+	protected float animSpeed() {
+		if (curAnim == null) return 1f;
+		if (curAnim == idle) return com.watabou.utils.GameSettings.idleFast() ? com.watabou.utils.GameSettings.frameSpeed() : 1f;
+		if (curAnim == run) return com.watabou.utils.GameSettings.moveSpeed();
+		return com.watabou.utils.GameSettings.frameSpeed();
+	}
 	
 	public void move( int from, int to ) {
 		turnTo( from , to );
 
 		play( run );
 		
-		motion = new PosTweener( this, worldToCamera( to ), moveInterval );
+		motion = new PosTweener( this, worldToCamera( to ), moveInterval / com.watabou.utils.GameSettings.moveSpeed() );
 		motion.listener = this;
 		parent.add( motion );
 
@@ -303,7 +313,7 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 	public void jump( int from, int to, float height, float duration,  Callback callback ) {
 		jumpCallback = callback;
 
-		jumpTweener = new JumpTweener( this, worldToCamera( to ), height, duration );
+		jumpTweener = new JumpTweener( this, worldToCamera( to ), height, duration / com.watabou.utils.GameSettings.moveSpeed() );
 		jumpTweener.listener = this;
 		parent.add( jumpTweener );
 
@@ -348,7 +358,7 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 	
 	public void bloodBurstA( PointF from, int damage ) {
 		if (visible) {
-			com.shatteredpixel.shatteredpixeldungeon.atmosphere.Ambience.onBlood( this, blood(), damage );
+			com.shatteredpixel.shatteredpixeldungeon.atmosphere.Ambience.onBlood( this, blood(), damage, from );
 			PointF c = center();
 			int n = (int)Math.min( 9 * Math.sqrt( (double)damage / ch.HT ), 9 );
 			Splash.at( c, PointF.angle( from, c ), 3.1415926f / 2, blood(), n );

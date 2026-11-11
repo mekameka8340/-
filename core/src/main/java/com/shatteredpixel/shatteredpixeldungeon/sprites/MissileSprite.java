@@ -132,7 +132,7 @@ public class MissileSprite extends ItemSprite implements Tweener.Listener {
 		point( from );
 
 		PointF d = PointF.diff( to, from );
-		speed.set(d).normalize().scale(SPEED);
+		speed.set(d).normalize().scale(SPEED * com.watabou.utils.GameSettings.missileSpeed());
 		
 		angularSpeed = DEFAULT_ANGULAR_SPEED;
 		for (Class<?extends Item> cls : ANGULAR_SPEEDS.keySet()){
@@ -161,7 +161,7 @@ public class MissileSprite extends ItemSprite implements Tweener.Listener {
 			updateFrame();
 		}
 		
-		float speed = SPEED;
+		float speed = SPEED * com.watabou.utils.GameSettings.missileSpeed();
 		if (item instanceof Dart
 				&& (Dungeon.hero.belongings.weapon() instanceof Crossbow
 				|| Dungeon.hero.belongings.secondWep() instanceof Crossbow)){

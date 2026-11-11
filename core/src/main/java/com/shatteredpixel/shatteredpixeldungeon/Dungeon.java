@@ -289,6 +289,10 @@ public class Dungeon {
 			com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff.affect(hero,
 					com.shatteredpixel.shatteredpixeldungeon.augments.AugTracker.class).startNew();
 		}
+		if (isChallenged(Challenges.AUGMENTS_2)){
+			com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff.affect(hero,
+					com.shatteredpixel.shatteredpixeldungeon.augments2.Tracker2.class).startNew();
+		}
 	}
 
 	public static boolean isChallenged( int mask ) {

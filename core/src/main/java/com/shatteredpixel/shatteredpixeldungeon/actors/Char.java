@@ -484,6 +484,9 @@ public abstract class Char extends Actor {
 			if (this == Dungeon.hero && com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()){
 				dmg = com.shatteredpixel.shatteredpixeldungeon.augments.Augs.modifyAttack( (Hero)this, enemy, dmg );
 			}
+			if (this == Dungeon.hero && com.shatteredpixel.shatteredpixeldungeon.augments2.Aug2.active()){
+				dmg = com.shatteredpixel.shatteredpixeldungeon.augments2.Aug2.modifyAttack( (Hero)this, enemy, dmg );
+			}
 
 			int effectiveDamage = enemy.defenseProc( this, Math.round(dmg) );
 			//do not trigger on-hit logic if defenseProc returned a negative value
@@ -857,6 +860,9 @@ public abstract class Char extends Actor {
 			return;
 		}
 
+		if (this != Dungeon.hero && com.shatteredpixel.shatteredpixeldungeon.augments2.Aug2.active()){
+			dmg = com.shatteredpixel.shatteredpixeldungeon.augments2.Aug2.onDamaged( this, dmg, src );
+		}
 		if (src instanceof com.shatteredpixel.shatteredpixeldungeon.items.wands.Wand && com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()){
 			dmg = com.shatteredpixel.shatteredpixeldungeon.augments.Augs.wandDamage( this, dmg );
 		}

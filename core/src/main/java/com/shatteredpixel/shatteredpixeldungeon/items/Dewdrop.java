@@ -79,6 +79,81 @@ public class Dewdrop extends Item {
 		return true;
 	}
 
+	// ---------------------------------------------------------------- collecting dew on its own (player setting)
+
+	//the cell the hero is stepping onto by walking, on their own turn (-1 otherwise). Only such a step collects
+	// on its own: being pushed, pulled, teleported, leaping or falling onto dew or into grass takes nothing,
+	// so no turn is ever added to an ability, a knockback or another character's turn
+	public static int heroStep = -1;
+
+	public static boolean steppingOnto( int pos ){
+		return heroStep != -1 && heroStep == pos && Dungeon.hero != null && Dungeon.hero.pos == pos;
+	}
+
+	//whether dew is collected on its own right now: off, unless an enemy is hunting the hero, or unless one is in sight
+	public static boolean autoCollectNow(){
+		Hero hero = Dungeon.hero;
+		if (hero == null || Dungeon.level == null) return false;
+		switch (com.shatteredpixel.shatteredpixeldungeon.SPDSettings.autoDewMode()){
+			default: case com.shatteredpixel.shatteredpixeldungeon.SPDSettings.DEW_UNLESS_SEEN:
+				return hero.visibleEnemies() == 0;
+			case com.shatteredpixel.shatteredpixeldungeon.SPDSettings.DEW_UNLESS_HUNTED:
+				//any enemy on the floor that is hunting the hero, seen or not
+				for (com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob m : Dungeon.level.mobs.toArray(new com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob[0])){
+					if (m.isAlive() && m.alignment == com.shatteredpixel.shatteredpixeldungeon.actors.Char.Alignment.ENEMY
+							&& m.state == m.HUNTING && m.isTargeting(hero)){
+						return false;
+					}
+				}
+				return true;
+		}
+	}
+
+	//a seed the hero comes across goes into the bag, by the same rule as dew and at the same cost of a turn.
+	//Returns whether it was taken (the caller removes it from where it was)
+	public static boolean takeSeed( Hero hero, Item seed, int pos ){
+		if (!com.shatteredpixel.shatteredpixeldungeon.SPDSettings.autoSeeds() || !autoCollectNow()) return false;
+		if (com.shatteredpixel.shatteredpixeldungeon.Challenges.isItemBlocked(seed)) return false;
+		if (!seed.collect(hero.belongings.backpack)) return false;
+		GameScene.pickUp(seed, pos);
+		Sample.INSTANCE.play( Assets.Sounds.ITEM );
+		GLog.i( Messages.capitalize(Messages.get(Hero.class, "you_now_have", seed.name())) );
+		hero.spend(1f);
+		return true;
+	}
+
+	//the hero walked onto a cell: dew (or a seed) already lying there is taken along the way, if the setting allows.
+	//Like picking it up by hand it takes a turn, added to the step
+	public static void walkedOver( Hero hero, int pos ){
+		if (!steppingOnto(pos)) return;
+		//only once per step
+		heroStep = -1;
+		if (!com.shatteredpixel.shatteredpixeldungeon.SPDSettings.autoDewFloor() || !autoCollectNow()) return;
+		//walking there to pick it up anyway
+		if (hero.curAction instanceof com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroAction.PickUp
+				&& hero.curAction.dst == pos) return;
+		com.shatteredpixel.shatteredpixeldungeon.items.Heap heap = Dungeon.level.heaps.get(pos);
+		if (heap == null || heap.type != com.shatteredpixel.shatteredpixeldungeon.items.Heap.Type.HEAP || heap.items.isEmpty()) return;
+		if (heap.peek() instanceof com.shatteredpixel.shatteredpixeldungeon.plants.Plant.Seed){
+			Item seed = heap.peek();
+			if (takeSeed(hero, seed, pos)) heap.pickUp();
+			return;
+		}
+		if (!(heap.peek() instanceof Dewdrop) || !com.shatteredpixel.shatteredpixeldungeon.SPDSettings.autoDew()) return;
+		Waterskin flask = hero.belongings.getItem( Waterskin.class );
+		if (flask == null || flask.isFull()) return;
+		Dewdrop dew = (Dewdrop) heap.peek();
+		if (com.shatteredpixel.shatteredpixeldungeon.Challenges.isItemBlocked(dew)) return;
+
+		Catalog.setSeen(Dewdrop.class);
+		Statistics.itemTypesDiscovered.add(Dewdrop.class);
+		heap.pickUp();
+		flask.collectDew(dew);
+		GameScene.pickUp(dew, pos);
+		Sample.INSTANCE.play( Assets.Sounds.DEWDROP );
+		hero.spend(1f);
+	}
+
 	public static boolean consumeDew(int quantity, Hero hero, boolean force){
 		//20 drops for a full heal
 		int effect = Math.round( hero.HT * 0.05f * quantity );

@@ -129,7 +129,55 @@ public class SPDSettings extends GameSettings {
 		return getInt( KEY_ATMOSPHERE, 2, 0, 3 );
 	}
 
-	//floating damage numbers over characters
+	//dew from trampled grass goes straight into the waterskin (idea from Blue Archive PD).
+	//Whether dew is picked up on its own at all
+	public static final String KEY_AUTO_DEW_ON = "auto_dew_on";
+
+	public static void autoDew( boolean value ){
+		put( KEY_AUTO_DEW_ON, value );
+	}
+
+	public static boolean autoDew(){
+		//before this switch existed, mode 0 meant off
+		return getBoolean( KEY_AUTO_DEW_ON, getInt( KEY_AUTO_DEW, DEW_OFF, 0, 2 ) != DEW_OFF );
+	}
+
+	//when dew and seeds are not picked up: 1: an enemy is after the hero, 2: an enemy is in sight
+	public static final String KEY_AUTO_DEW = "auto_dew_mode";
+	public static final int DEW_OFF = 0, DEW_UNLESS_HUNTED = 1, DEW_UNLESS_SEEN = 2;
+
+	public static void autoDewMode( int value ){
+		//pins the on/off switch first, so it no longer follows the old meaning of this key
+		put( KEY_AUTO_DEW_ON, autoDew() );
+		put( KEY_AUTO_DEW, value );
+	}
+
+	public static int autoDewMode(){
+		return getInt( KEY_AUTO_DEW, DEW_UNLESS_SEEN, 0, 2 ) == DEW_UNLESS_HUNTED ? DEW_UNLESS_HUNTED : DEW_UNLESS_SEEN;
+	}
+
+	//also take dew already lying on the floor when walking over it (by the same rule as above)
+	public static final String KEY_AUTO_DEW_FLOOR = "auto_dew_floor";
+
+	public static void autoDewFloor( boolean value ){
+		put( KEY_AUTO_DEW_FLOOR, value );
+	}
+
+	public static boolean autoDewFloor(){
+		return getBoolean( KEY_AUTO_DEW_FLOOR, false );
+	}
+
+	//seeds are picked up the same way as dew (same rule, same turn cost), into the bag
+	public static final String KEY_AUTO_SEEDS = "auto_seeds";
+
+	public static void autoSeeds( boolean value ){
+		put( KEY_AUTO_SEEDS, value );
+	}
+
+	public static boolean autoSeeds(){
+		return getBoolean( KEY_AUTO_SEEDS, false );
+	}
+
 	public static final String KEY_DMG_NUMBERS = "damage_numbers";
 
 	public static void damageNumbers( boolean value ){
@@ -290,11 +338,11 @@ public class SPDSettings extends GameSettings {
 	}
 	
 	public static void challenges( int value ) {
-		put( KEY_CHALLENGES, value );
+		put( KEY_CHALLENGES, Challenges.sanitize(value) );
 	}
 	
 	public static int challenges() {
-		return getInt( KEY_CHALLENGES, 0, 0, Challenges.MAX_VALUE );
+		return Challenges.sanitize(getInt( KEY_CHALLENGES, 0, 0, Challenges.MAX_VALUE ));
 	}
 
 	public static void customSeed( String value ){

@@ -115,6 +115,29 @@ public class Ambience {
 		return TextureCache.get(key);
 	}
 
+	//a soft uneven puff, for blood spreading in water
+	private static SmartTexture cloudTex(){
+		String key = "amb_cloud";
+		if (!TextureCache.contains(key)){
+			SmartTexture tx = TextureCache.create(key, 32, 32);
+			tx.filter(com.watabou.glwrap.Texture.LINEAR, com.watabou.glwrap.Texture.LINEAR);
+			Pixmap p = tx.bitmap;
+			p.setBlending(Pixmap.Blending.None);
+			for (int y = 0; y < 32; y++){
+				for (int x = 0; x < 32; x++){
+					float dx = (x + 0.5f - 16f) / 16f, dy = (y + 0.5f - 16f) / 16f;
+					float d = (float)Math.sqrt(dx*dx + dy*dy);
+					//lobes around the rim, so it isn't a plain disc
+					float lobes = 0.14f * (float)Math.sin(Math.atan2(dy, dx) * 3f + 1.3f) + 0.09f * (float)Math.sin(Math.atan2(dy, dx) * 7f);
+					float a = Math.max(0f, 1f - d / (0.82f + lobes));
+					a = a * a * (3f - 2f * a);
+					p.drawPixel(x, y, 0xFFFFFF00 | (int)(Math.min(1f, a) * 255));
+				}
+			}
+		}
+		return TextureCache.get(key);
+	}
+
 	private static SmartTexture shadowTex(){
 		String key = "amb_shadow";
 		if (!TextureCache.contains(key)){
@@ -164,6 +187,8 @@ public class Ambience {
 		private final HashMap<Char, Image> shadows = new HashMap<>();
 		private final HashMap<Char, Image> reflections = new HashMap<>();
 		private final Group decals = new Group();
+		private final Group stains = new Group();
+		private final ArrayList<Surface.Stain> stainList = new ArrayList<>();
 		private final Group shafts = new Group();
 		private final Group moments = new Group();
 		private final Group shadowGroup = new Group();
@@ -179,10 +204,15 @@ public class Ambience {
 
 		public FloorLayer(){
 			floor = this;
+			//the water's own light and foam lie under the reflections
+			reflGroup.add(new Surface.Water());
 			add(shafts);
 			add(moments);
 			add(decals);
+			add(stains);
 			add(shadowGroup);
+			//mist drifts over the floor and whatever lies on it, under the creatures walking through
+			add(new Surface.Mist());
 		}
 
 		@Override
@@ -199,6 +229,7 @@ public class Ambience {
 			reflGroup.visible = true;
 
 			WaterMask.update(level);
+			Surface.update(level);
 
 			ArrayList<Char> chars = new ArrayList<>();
 			if (Dungeon.hero != null) chars.add(Dungeon.hero);
@@ -554,6 +585,37 @@ public class Ambience {
 			}
 		}
 
+		//something left on the floor at x, y. With too many, the one nearest its end makes way
+		Surface.Stain stain( float x, float y ){
+			Surface.Stain old = null;
+			for (int i = stainList.size() - 1; i >= 0; i--){
+				Surface.Stain s = stainList.get(i);
+				if (!s.alive){
+					stainList.remove(i);
+					continue;
+				}
+				if (old == null || s.age / s.life > old.age / old.life) old = s;
+			}
+			Surface.Stain s = (Surface.Stain) stains.getFirstAvailable(Surface.Stain.class);
+			if (s == null){
+				if (stainList.size() >= 48 && old != null){
+					s = old;
+					stainList.remove(old);
+				} else {
+					s = new Surface.Stain();
+					stains.add(s);
+				}
+			}
+			stainList.add(s);
+			return s;
+		}
+
+		//blood spilt into water spreads out as a thin cloud and is gone in a few seconds
+		void bloodCloud( float x, float y, int color, float amount ){
+			BloodCloud c = (BloodCloud) reflGroup.recycle(BloodCloud.class);
+			c.reset(x, y, color, amount);
+		}
+
 		private final ArrayList<Decal> decalList = new ArrayList<>();
 
 		//reuses dead decals, or the oldest one once there are too many
@@ -661,7 +723,48 @@ public class Ambience {
 		}
 	}
 
-	//pixels left on the floor (blood, scorch marks, frost), slowly fading away
+	public static class BloodCloud extends WaterMask.MaskedImage {
+		private float life, maxLife, peak, grow;
+
+		public BloodCloud(){
+			super(cloudTex());
+			//lies under the floor tiles like the reflections, so the banks cut it off
+			masked = false;
+		}
+
+		void reset( float x, float y, int color, float amount ){
+			revive();
+			visible = true;
+			origin.set(16f, 16f);
+			angle = Random.Float(360f);
+			scale.set(0.35f + 0.25f * amount, 0.28f + 0.20f * amount);
+			this.x = x - 16f;
+			this.y = y - 16f;
+			resetColor();
+			hardlight(((color >> 16) & 0xFF) / 255f, ((color >> 8) & 0xFF) / 255f, (color & 0xFF) / 255f);
+			maxLife = life = 3.5f + 1.5f * amount;
+			peak = 0.34f + 0.16f * amount;
+			grow = 0.22f + 0.16f * amount;
+			alpha(peak);
+		}
+
+		@Override
+		public void update() {
+			super.update();
+			life -= Game.elapsed;
+			if (life <= 0){
+				kill();
+				return;
+			}
+			float k = life / maxLife;
+			//thins as it spreads
+			alpha(peak * k * (0.4f + 0.6f * k));
+			scale.x += Game.elapsed * grow;
+			scale.y += Game.elapsed * grow * 0.75f;
+		}
+	}
+
+	//pixels left on the floor (scorch marks, frost), slowly fading away
 	public static class Decal extends PseudoPixel {
 		float life, maxLife;
 
@@ -701,16 +804,226 @@ public class Ambience {
 
 	// ================================================================ hooks called from game code
 
+	//what comes out of a creature when it is struck
+	private enum Matter { BLOOD, ICHOR, SAP, SLIME, BONE, STONE, CRYSTAL, WOOD, MACHINE, EMBER, FROST, NOTHING }
+
+	private static Matter matter( Char c, CharSprite s, int color ){
+		//spirits and things made of magic leave nothing
+		if ((color >>> 24) == 0x88
+				|| s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.GhostSprite || s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.WraithSprite
+				|| s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.TormentedSpiritSprite || s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.WardSprite
+				|| s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.CrystalWispSprite
+				|| c instanceof YogFist.BrightFist || c instanceof YogFist.DarkFist){
+			return Matter.NOTHING;
+		}
+		//fire sheds embers, frost sheds ice, the other elementals are only energy
+		if (c.properties().contains(Char.Property.FIERY)) return Matter.EMBER;
+		if (c.properties().contains(Char.Property.ICY))   return Matter.FROST;
+		if (c instanceof Elemental) return Matter.NOTHING;
+
+		if (s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.DM100Sprite || s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.DM200Sprite || s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.DM201Sprite
+				|| s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.DM300Sprite || s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.PylonSprite){
+			return Matter.MACHINE;
+		}
+		if (s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.CrystalGuardianSprite || s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.CrystalSpireSprite
+				|| s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.MimicSprite.Crystal){
+			return Matter.CRYSTAL;
+		}
+		if (s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.MimicSprite) return Matter.WOOD;
+		if (s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.SkeletonSprite || s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.UndeadSprite) return Matter.BONE;
+		if (s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.GooSprite || s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.SlimeSprite || s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.CausticSlimeSprite){
+			return Matter.SLIME;
+		}
+		if (s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.FungalCoreSprite || s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.FungalSentrySprite || s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.FungalSpinnerSprite
+				|| s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.RotHeartSprite || s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.RotLasherSprite){
+			return Matter.SAP;
+		}
+		//statues, golems and anything else that isn't alive breaks rather than bleeds
+		if (c.properties().contains(Char.Property.INORGANIC)
+				|| s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.StatueSprite || s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.GolemSprite || s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.EarthGuardianSprite){
+			return Matter.STONE;
+		}
+
+		//the rest bleed. Red blood for most; insects, spiders, crabs and the like have their own colour
+		int r = (color >> 16) & 0xFF, g = (color >> 8) & 0xFF, b = color & 0xFF;
+		if (r > 120 && g < 70 && b < 70) return Matter.BLOOD;
+		//grey with no colour in it, on something dead: old bone
+		if (Math.max(r, Math.max(g, b)) - Math.min(r, Math.min(g, b)) < 24){
+			return c.properties().contains(Char.Property.UNDEAD) ? Matter.BONE : Matter.STONE;
+		}
+		return Matter.ICHOR;
+	}
+
+	private static boolean liquid( Matter m ){
+		return m == Matter.BLOOD || m == Matter.ICHOR || m == Matter.SAP || m == Matter.SLIME;
+	}
+
+	private static int rgb( float r, float g, float b ){
+		return 0xFF000000 | ((int)(Math.min(1f, r) * 255) << 16) | ((int)(Math.min(1f, g) * 255) << 8) | (int)(Math.min(1f, b) * 255);
+	}
+
 	public static void onBlood( CharSprite s, int color, int damage ){
+		onBlood(s, color, damage, null);
+	}
+
+	//from: where the blow came from, whatever is knocked loose is thrown the other way
+	public static void onBlood( CharSprite s, int color, int damage, PointF from ){
 		if (s == null || s.ch == null || !s.visible || !enabled()) return;
 		Char c = s.ch;
-		if (Dungeon.level == null || c.pos < 0 || c.pos >= Dungeon.level.length()) return;
-		if (Dungeon.level.water[c.pos] || Dungeon.level.pit[c.pos]) return;
+		Level level = Dungeon.level;
+		if (level == null || c.pos < 0 || c.pos >= level.length()) return;
+		if (level.pit[c.pos] || floor == null) return;
+
+		Matter m = matter(c, s, color);
+		if (m == Matter.NOTHING) return;
+
 		float fx = s.x + s.width() / 2f;
 		float fy = s.y + s.height() - 2f;
-		int n = (int)Math.min(9, 2 + 8 * Math.sqrt(damage / (float)Math.max(1, c.HT)));
+		//how hard the hit was, against what the creature can take
+		float hit = (float)Math.min(1f, Math.sqrt(damage / (float)Math.max(1, c.HT)));
+		//the blow that finishes it spills more
+		if (!c.isAlive()) hit = Math.min(1.25f, hit * 1.3f + 0.15f);
 		int col = (color & 0xFFFFFF) | 0xFF000000;
-		decalSplat(fx, fy, darken(col, 0.75f), n, 5f, 25f);
+
+		if (level.water[c.pos] && !c.flying){
+			//liquid clouds the water, anything solid just sinks
+			if (liquid(m)) floor.bloodCloud(fx, fy, darken(col, m == Matter.SLIME ? 0.9f : 0.78f), Math.min(1f, hit));
+			return;
+		}
+		if (!Surface.enabled()){
+			if (m == Matter.BLOOD || m == Matter.ICHOR) decalSplat(fx, fy, darken(col, 0.75f), (int)(2 + 7 * Math.min(1f, hit)), 5f, 25f);
+			return;
+		}
+
+		//which way it is thrown
+		float dx = 0, dy = 0;
+		if (from != null){
+			dx = fx - from.x; dy = (fy - 6f) - from.y;
+			float len = (float)Math.sqrt(dx * dx + dy * dy);
+			if (len > 2f){ dx /= len; dy /= len; } else { dx = dy = 0; }
+		}
+		//a flying creature is struck in the air, and what falls from it lands spread out below
+		if (c.flying){ dx = dy = 0; }
+		//it starts at the creature's far side rather than under it
+		fx += dx * 3f;
+		fy += dy * 2f;
+
+		float r = ((col >> 16) & 0xFF) / 255f, g = ((col >> 8) & 0xFF) / 255f, b = (col & 0xFF) / 255f;
+		float lum = 0.3f * r + 0.5f * g + 0.2f * b;
+
+		switch (m){
+			case BLOOD: default: {
+				int fresh = rgb(r * 0.80f, g * 0.80f, b * 0.80f);
+				//dries to a dull dark brown-red
+				int dried = rgb(lum * 0.75f + r * 0.16f, lum * 0.55f + g * 0.08f, lum * 0.45f + b * 0.08f);
+				floor.stain(fx, fy).reset(fx, fy, Surface.LIQUID, fresh, dried,
+						7f + 12f * hit, hit > 0.3f ? 1.0f + 3.2f * hit : 0f, dx, dy, 0.55f + 0.75f * hit,
+						34f + 12f * hit, 14f, 8f, false);
+				break;
+			}
+			case ICHOR: {
+				//thin, and keeps its own colour as it dries, only duller
+				int fresh = rgb(r * 0.82f, g * 0.82f, b * 0.82f);
+				int dried = rgb(r * 0.45f + lum * 0.1f, g * 0.45f + lum * 0.1f, b * 0.45f + lum * 0.1f);
+				floor.stain(fx, fy).reset(fx, fy, Surface.LIQUID, fresh, dried,
+						6.5f + 11f * hit, hit > 0.45f ? 0.8f + 2.4f * hit : 0f, dx, dy, 0.5f + 0.6f * hit,
+						30f + 10f * hit, 12f, 7f, false);
+				break;
+			}
+			case SAP: {
+				//thick sap: it doesn't fly far
+				int fresh = rgb(r * 0.62f, g * 0.74f, b * 0.50f);
+				int dried = rgb(r * 0.40f, g * 0.46f, b * 0.30f);
+				floor.stain(fx, fy).reset(fx, fy, Surface.LIQUID, fresh, dried,
+						5f + 7f * hit, 1.0f + 2.6f * hit, dx, dy, 0.5f + 0.5f * hit,
+						30f + 10f * hit, 16f, 12f, false);
+				break;
+			}
+			case SLIME: {
+				//black for the Goo, otherwise its own colour, darkened
+				int tone = lum < 0.08f ? rgb(0.10f, 0.11f, 0.10f) : rgb(r * 0.62f, g * 0.66f, b * 0.60f);
+				floor.stain(fx, fy).reset(fx, fy, Surface.GOBBETS, tone, tone,
+						6f + 7f * hit, 1.4f + 2.4f * hit, dx, dy, 0.5f + 0.6f * hit,
+						38f + 12f * hit, 0f, 0f, true);
+				break;
+			}
+			case BONE: {
+				//chips of old ivory
+				int bone = rgb(0.92f, 0.88f, 0.74f);
+				floor.stain(fx, fy).reset(fx, fy, Surface.FRAGMENTS, bone, bone,
+						7f + 11f * hit, 0f, dx, dy, 0.6f + 0.8f * hit,
+						26f + 10f * hit, 0f, 0f, false);
+				break;
+			}
+			case STONE: {
+				int chip = rgb(r * 0.72f, g * 0.72f, b * 0.72f);
+				floor.stain(fx, fy).reset(fx, fy, Surface.FRAGMENTS, chip, chip,
+						6.5f + 10f * hit, 0f, dx, dy, 0.5f + 0.7f * hit,
+						26f + 10f * hit, 0f, 0f, false);
+				break;
+			}
+			case WOOD: {
+				//splinters of the chest it pretends to be
+				int wood = s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.MimicSprite.Golden ? rgb(0.78f, 0.62f, 0.20f)
+						: s instanceof com.shatteredpixel.shatteredpixeldungeon.sprites.MimicSprite.Ebony ? rgb(0.20f, 0.17f, 0.22f) : rgb(0.50f, 0.36f, 0.20f);
+				floor.stain(fx, fy).reset(fx, fy, Surface.FRAGMENTS, wood, wood,
+						6.5f + 10f * hit, 0f, dx, dy, 0.5f + 0.7f * hit,
+						26f + 10f * hit, 0f, 0f, false);
+				break;
+			}
+			case CRYSTAL: {
+				//shards that go on catching the light
+				floor.stain(fx, fy).reset(fx, fy, Surface.FRAGMENTS, rgb(r * 0.9f, g * 0.9f, b * 0.9f), rgb(r * 0.9f, g * 0.9f, b * 0.9f),
+						7f + 11f * hit, 0f, dx, dy, 0.5f + 0.7f * hit,
+						24f + 8f * hit, 0f, 0f, true);
+				break;
+			}
+			case MACHINE: {
+				//bits of metal, and a little black oil
+				//bright filings that catch the light, so they show against grey stone
+				int metal = rgb(0.66f, 0.70f, 0.80f);
+				floor.stain(fx, fy).reset(fx, fy, Surface.FRAGMENTS, metal, metal,
+						6.5f + 10f * hit, 0f, dx, dy, 0.4f + 0.6f * hit,
+						24f + 8f * hit, 0f, 0f, true);
+				if (hit > 0.3f){
+					int oil = rgb(0.07f, 0.06f, 0.08f);
+					floor.stain(fx, fy).reset(fx, fy, Surface.LIQUID, oil, oil,
+							5f + 7f * hit, 0.8f + 2.0f * hit, dx, dy, 0.4f + 0.4f * hit,
+							34f, 0f, 22f, false);
+				}
+				break;
+			}
+			case EMBER: {
+				//glowing bits that cool to soot within a few seconds
+				floor.stain(fx, fy).reset(fx, fy, Surface.FRAGMENTS, rgb(1.0f, 0.62f, 0.18f), rgb(0.13f, 0.10f, 0.09f),
+						6.5f + 10f * hit, 0f, dx, dy, 0.5f + 0.6f * hit,
+						16f, 3.2f, 0f, false);
+				break;
+			}
+			case FROST: {
+				//splinters of ice that melt away
+				floor.stain(fx, fy).reset(fx, fy, Surface.FRAGMENTS, rgb(0.80f, 0.92f, 1.0f), rgb(0.80f, 0.92f, 1.0f),
+						6.5f + 10f * hit, 0f, dx, dy, 0.5f + 0.6f * hit,
+						8f, 0f, 0f, true);
+				break;
+			}
+		}
+	}
+
+	//drops left behind by someone bleeding as they go - only by those with blood in them
+	private static void bloodTrail( CharSprite s, Level level, int from ){
+		if (floor == null || !Surface.enabled() || level.water[from] || level.pit[from]) return;
+		int color = s.blood();
+		Matter m = matter(s.ch, s, color);
+		if (m != Matter.BLOOD && m != Matter.ICHOR) return;
+		PointF p = DungeonTilemap.tileCenterToWorld(from);
+		float r = ((color >> 16) & 0xFF) / 255f, g = ((color >> 8) & 0xFF) / 255f, b = (color & 0xFF) / 255f;
+		float lum = 0.3f * r + 0.5f * g + 0.2f * b;
+		int fresh = rgb(r * 0.80f, g * 0.80f, b * 0.80f);
+		int dried = m == Matter.BLOOD ? rgb(lum * 0.75f + r * 0.16f, lum * 0.55f + g * 0.08f, lum * 0.45f + b * 0.08f)
+				: rgb(r * 0.45f, g * 0.45f, b * 0.45f);
+		float x = p.x + Random.Float(-4f, 4f), y = p.y + 4f + Random.Float(-2f, 2f);
+		floor.stain(x, y).reset(x, y, Surface.LIQUID, fresh, dried, Random.Float(2.2f, 3.4f), 0f, 0, 0, 0.75f, 22f, 12f, 6f, false);
 	}
 
 	public static void onExplosion( int cell ){
@@ -746,6 +1059,11 @@ public class Ambience {
 		}
 
 		if (c.flying || air == null) return;
+
+		if (c.buff(com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Bleeding.class) != null
+				|| (c == Dungeon.hero && c.isAlive() && c.HP <= c.HT * 0.2f)){
+			bloodTrail(s, level, from);
+		}
 
 		int t = level.map[to];
 		if (level.water[to]){
@@ -1165,6 +1483,34 @@ public class Ambience {
 			}
 		}
 
+		//torches, braziers and crystals in view get a soft glow of their own, spilling over the wall around them
+		private final ArrayList<Image> sourceGlows = new ArrayList<>();
+
+		private void updateSourceGlows(){
+			int n = Surface.enabled() ? Atmosphere.glowCount : 0;
+			while (sourceGlows.size() < n){
+				Image g = new Image(glowTex());
+				g.origin.set(8f, 8f);
+				lit.add(g);
+				sourceGlows.add(g);
+			}
+			for (int i = 0; i < sourceGlows.size(); i++){
+				Image g = sourceGlows.get(i);
+				if (i >= n){
+					g.visible = false;
+					continue;
+				}
+				int o = i * 7;
+				float size = Atmosphere.glows[o+6] * 0.55f;
+				g.visible = true;
+				g.scale.set(size, size * 0.9f);
+				g.x = Atmosphere.glows[o] - 8f;
+				g.y = Atmosphere.glows[o+1] - 8f;
+				g.hardlight(Atmosphere.glows[o+2], Atmosphere.glows[o+3], Atmosphere.glows[o+4]);
+				g.alpha(Math.min(0.30f, 0.26f * Atmosphere.glows[o+5]));
+			}
+		}
+
 		Mote recycleMote( boolean light ){
 			return (Mote) (light ? lit : unlit).recycle(Mote.class);
 		}
@@ -1178,6 +1524,7 @@ public class Ambience {
 			String reg = region();
 
 			updateHalos(level);
+			updateSourceGlows();
 
 			//halls: embers rising from the fire streams and floor cracks
 			if (reg.equals(Assets.Environment.TILES_HALLS)){

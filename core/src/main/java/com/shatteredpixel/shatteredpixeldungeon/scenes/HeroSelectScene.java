@@ -897,7 +897,7 @@ public class HeroSelectScene extends PixelScene {
 				chkChals.setRect(0, 20, 120, 16);
 				add(chkChals);
 
-				int max = Challenges.MAX_CHALS;
+				int max = Challenges.MAX_CHALS - 1;
 				optChals = new OptionSlider(Messages.get(HeroSelectScene.class, "randomize_chals_title"), "0", Integer.toString(max), 0, max) {
 					@Override
 					protected void onChange() {
@@ -933,6 +933,8 @@ public class HeroSelectScene extends PixelScene {
 							for (int i = 0; i < Challenges.MAX_CHALS; i++){
 								chalMasks.add((int)Math.pow(2, i));
 							}
+							//the two augment challenges exclude each other
+							chalMasks.remove((Integer)(Random.Int(2) == 0 ? Challenges.AUGMENTS : Challenges.AUGMENTS_2));
 							Random.shuffle(chalMasks);
 							int mask = 0;
 							for (int i = 0; i < chals; i++){

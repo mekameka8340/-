@@ -472,7 +472,11 @@ public class WndRanking extends WndTabbed {
 
 			float pos = 0;
 
-			for (int i=0; i < Challenges.NAME_IDS.length; i++) {
+			//the rows are fitted into the window's height, since the augment challenge makes one row more than it had room for
+			final int count = Challenges.NAME_IDS.length;
+			final float rowH = Math.min(15, (HEIGHT - (count-1)) / (float)count);
+
+			for (int i=0; i < count; i++) {
 
 				final String challenge = Challenges.NAME_IDS[i];
 
@@ -483,7 +487,7 @@ public class WndRanking extends WndTabbed {
 				if (i > 0) {
 					pos += 1;
 				}
-				cb.setRect( 0, pos, WIDTH-16, 15 );
+				cb.setRect( 0, pos, WIDTH-16, rowH );
 
 				add( cb );
 
@@ -496,7 +500,7 @@ public class WndRanking extends WndTabbed {
 						);
 					}
 				};
-				info.setRect(cb.right(), pos, 16, 15);
+				info.setRect(cb.right(), pos, 16, rowH);
 				add(info);
 
 				pos = cb.bottom();
