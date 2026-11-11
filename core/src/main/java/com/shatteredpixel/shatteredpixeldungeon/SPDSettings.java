@@ -56,6 +56,7 @@ public class SPDSettings extends GameSettings {
 	public static final String KEY_GRID 	    = "visual_grid";
 	public static final String KEY_CAMERA_FOLLOW= "camera_follow";
 	public static final String KEY_SCREEN_SHAKE = "screen_shake";
+	public static final String KEY_ATMOSPHERE   = "atmosphere";
 	
 	public static void fullscreen( boolean value ) {
 		put( KEY_FULLSCREEN, value );
@@ -116,6 +117,50 @@ public class SPDSettings extends GameSettings {
 
 	public static int screenShake() {
 		return getInt( KEY_SCREEN_SHAKE, 2, 0, 4 );
+	}
+
+	//0 = off, 1 = low, 2 = medium, 3 = high
+	public static void atmosphere( int value ) {
+		put( KEY_ATMOSPHERE, value );
+		com.shatteredpixel.shatteredpixeldungeon.atmosphere.Atmosphere.quality( value );
+	}
+
+	public static int atmosphere() {
+		return getInt( KEY_ATMOSPHERE, 2, 0, 3 );
+	}
+
+	//floating damage numbers over characters
+	public static final String KEY_DMG_NUMBERS = "damage_numbers";
+
+	public static void damageNumbers( boolean value ){
+		put( KEY_DMG_NUMBERS, value );
+	}
+
+	public static boolean damageNumbers(){
+		return getBoolean( KEY_DMG_NUMBERS, true );
+	}
+
+	//icon above the hero when one of their augments goes off
+	public static final String KEY_AUG_POPS = "augment_pops";
+
+	public static void augmentPops( boolean value ){
+		put( KEY_AUG_POPS, value );
+	}
+
+	public static boolean augmentPops(){
+		return getBoolean( KEY_AUG_POPS, true );
+	}
+
+	//how bright places seen before (but not currently in view) are drawn, 0 = default, 4 = brightest
+	public static final String KEY_ATMO_BRIGHT = "atmo_bright";
+
+	public static void atmoBright( int value ) {
+		put( KEY_ATMO_BRIGHT, value );
+		com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene.updateFog();
+	}
+
+	public static int atmoBright() {
+		return getInt( KEY_ATMO_BRIGHT, 0, 0, 4 );
 	}
 	
 	//Interface

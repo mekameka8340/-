@@ -646,6 +646,8 @@ public abstract class Level implements Bundlable {
 		if (!locked) {
 			locked = true;
 			Buff.affect(Dungeon.hero, LockedFloor.class);
+			//augment summons go into the boss room with the hero
+			com.shatteredpixel.shatteredpixeldungeon.augments.AugAllies.gather(this);
 		}
 	}
 
@@ -1043,6 +1045,9 @@ public abstract class Level implements Bundlable {
 		
 		if (Dungeon.level != null && ShatteredPixelDungeon.scene() instanceof GameScene) {
 			pressCell( cell );
+			if (Dungeon.level == this && heaps.get(cell) == heap && heap.type == Heap.Type.HEAP) {
+				com.shatteredpixel.shatteredpixeldungeon.atmosphere.Ambience.itemDropped( item, cell );
+			}
 		}
 		
 		return heap;
@@ -1366,6 +1371,7 @@ public abstract class Level implements Bundlable {
 			if (c instanceof Hero){
 				viewDist *= 1f + 0.25f*((Hero) c).pointsInTalent(Talent.FARSIGHT);
 				viewDist *= EyeOfNewt.visionRangeMultiplier();
+				if (com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()) viewDist = Math.max(1, viewDist + com.shatteredpixel.shatteredpixeldungeon.augments.Augs.vision());
 			}
 			
 			ShadowCaster.castShadow( cx, cy, width(), fieldOfView, blocking, Math.round(viewDist) );

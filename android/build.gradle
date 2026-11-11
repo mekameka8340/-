@@ -14,13 +14,28 @@ android {
 
     defaultConfig {
         manifestPlaceholders = [appName:appName]
-        applicationId appPackageName
+        applicationId 'com.spdmod.atmosphere'
+
 
         versionCode appVersionCode
-        versionName appVersionName
+        //shown on the title screen: the mod's own version, then the Shattered version it is built on
+        versionName '3.2 (SPD ' + appVersionName + ')'
 
         minSdkVersion appAndroidMinSDK
         targetSdkVersion appAndroidTargetSDK
+    }
+
+    //release builds are signed with the mod's own key, read from the environment (the key is not part of the source).
+    //Without ATMO_KEYSTORE set, a release build is left unsigned and you can sign it with your own key
+    signingConfigs {
+        atmo {
+            if (System.getenv('ATMO_KEYSTORE') != null) {
+                storeFile file(System.getenv('ATMO_KEYSTORE'))
+                storePassword System.getenv('ATMO_KS_PASS')
+                keyAlias System.getenv('ATMO_KEY_ALIAS') ?: 'spdatmo'
+                keyPassword System.getenv('ATMO_KS_PASS')
+            }
+        }
     }
 
     buildTypes {
@@ -41,10 +56,12 @@ android {
             shrinkResources true
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (System.getenv('ATMO_KEYSTORE') != null) signingConfig signingConfigs.atmo
 
             dependencies {
-                releaseImplementation project(':services:updates:githubUpdates')
-                releaseImplementation project(':services:news:shatteredNews')
+                //no update checks or news from the official game in this mod
+                releaseImplementation project(':services:updates:debugUpdates')
+                releaseImplementation project(':services:news:debugNews')
             }
         }
     }

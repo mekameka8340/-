@@ -64,7 +64,8 @@ runtime {
     jpackage {
         mainClass = appMainClass
         appVersion = (appVersionName =~ /\d+\.\d+\.\d+/)[0]
-        imageName = appName
+        //plain letters for the packaged program's name
+        imageName = 'AugmentPD'
     }
 
     if (osName.contains('windows')) {
@@ -124,6 +125,7 @@ dependencies {
     implementation "org.lwjgl:lwjgl-tinyfd:3.3.3:natives-linux"
     implementation "org.lwjgl:lwjgl-tinyfd:3.3.3:natives-linux-arm64"
 
-    implementation project(':services:updates:githubUpdates')
-    implementation project(':services:news:shatteredNews')
+    //no update checks or news from the official game in this mod
+    implementation project(':services:updates:debugUpdates')
+    implementation project(':services:news:debugNews')
 }

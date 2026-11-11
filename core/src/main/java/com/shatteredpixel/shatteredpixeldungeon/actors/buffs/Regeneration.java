@@ -82,6 +82,8 @@ public class Regeneration extends Buff {
 					delay /= SaltCube.healthRegenMultiplier();
 				}
 
+				if (com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()) delay /= com.shatteredpixel.shatteredpixeldungeon.augments.Augs.regenMultiplier((Hero) target);
+
 				partialRegen += 1f / delay;
 
 				if (partialRegen >= 1) {

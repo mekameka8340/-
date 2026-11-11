@@ -87,6 +87,27 @@ public abstract class OptionSlider extends Component {
 		PixelScene.align(sliderNode);
 	}
 
+	//changes the title text, e.g. to show the currently selected value
+	public void title( String text ){
+		title.text(text);
+		title.setPos(x + (width - title.width())/2, y + 2);
+		PixelScene.align(title);
+	}
+
+	//marks a tick with a color and makes it taller, used to point out important values
+	public void markTick( int val, int color ){
+		int i = val - minVal;
+		if (i < 0 || i >= sliderTicks.length) return;
+		sliderTicks[i].color(color);
+		sliderTicks[i].scale.set(sliderTicks[i].scale.x, 11);
+		markedTicks.add(i);
+	}
+
+	private final java.util.HashSet<Integer> markedTicks = new java.util.HashSet<>();
+
+	//live preview while dragging
+	protected void onDragValue( int val ){}
+
 	public void enable( boolean value ) {
 		active = value;
 		title.alpha( value ? 1.0f : 0.3f );
@@ -142,6 +163,7 @@ public abstract class OptionSlider extends Component {
 				if (pressed) {
 					PointF p = camera().screenToCamera((int) event.current.x, (int) event.current.y);
 					sliderNode.x = GameMath.gate(sliderBG.x - 2, p.x - sliderNode.width()/2, sliderBG.x + sliderBG.width() - 2);
+					onDragValue(minVal + Math.round((sliderNode.x - x) / tickDist));
 				}
 			}
 		};
@@ -170,7 +192,7 @@ public abstract class OptionSlider extends Component {
 		sliderBG.size(width-5, 1);
 		tickDist = sliderBG.width()/(maxVal - minVal);
 		for (int i = 0; i < sliderTicks.length; i++){
-			sliderTicks[i].y = sliderBG.y-4;
+			sliderTicks[i].y = sliderBG.y - (markedTicks.contains(i) ? 5 : 4);
 			sliderTicks[i].x = x + 2 + (tickDist*i);
 			PixelScene.align(sliderTicks[i]);
 		}

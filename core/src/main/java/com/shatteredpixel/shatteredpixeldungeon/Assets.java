@@ -210,6 +210,14 @@ public class Assets {
 		public static final String TELEPORT = "sounds/teleport.mp3";
 		public static final String CHARMS   = "sounds/charms.mp3";
 		public static final String MASTERY  = "sounds/mastery.mp3";
+		//augment challenge sounds, made for this mod
+		public static final String AUG_SILVER = "sounds/aug_silver.mp3";
+		public static final String AUG_GOLD   = "sounds/aug_gold.mp3";
+		public static final String AUG_PRISM  = "sounds/aug_prism.mp3";
+		public static final String AUG_LEGEND = "sounds/aug_legend.mp3";
+		public static final String AUG_TEASE  = "sounds/aug_tease.mp3";
+		public static final String AUG_STAR   = "sounds/aug_star.mp3";
+		public static final String AUG_TICK   = "sounds/aug_tick.mp3";
 		public static final String PUFF     = "sounds/puff.mp3";
 		public static final String ROCKS    = "sounds/rocks.mp3";
 		public static final String BURNING  = "sounds/burning.mp3";
@@ -238,6 +246,7 @@ public class Assets {
 
 				DESCEND, EAT, READ, LULLABY, DRINK, SHATTER, ZAP, LIGHTNING, LEVELUP, DEATH,
 				CHALLENGE, CURSED, TRAP, EVOKE, TOMB, ALERT, MELD, BOSS, BLAST, PLANT, RAY, BEACON,
+				AUG_SILVER, AUG_GOLD, AUG_PRISM, AUG_LEGEND, AUG_TEASE, AUG_STAR, AUG_TICK,
 				TELEPORT, CHARMS, MASTERY, PUFF, ROCKS, BURNING, FALLING, GHOST, SECRET, BONES,
 				BEE, DEGRADE, MIMIC, DEBUFF, CHARGEUP, GAS, CHAINS, SCAN, SHEEP, MINE
 		};

@@ -116,6 +116,7 @@ public class MagicMissile extends Emitter {
 
 	public void reset( int type, PointF from, PointF to, Callback callback ) {
 		this.callback = callback;
+		com.shatteredpixel.shatteredpixeldungeon.atmosphere.Atmosphere.trackMissile( this, type );
 		
 		this.to = to;
 		

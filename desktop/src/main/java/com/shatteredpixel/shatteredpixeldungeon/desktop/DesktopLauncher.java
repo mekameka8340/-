@@ -146,24 +146,26 @@ public class DesktopLauncher {
 		}
 		vendor = vendor.split("\\.")[1];
 
+		//this mod's name is Korean: keep the save folder in plain letters so every system can handle it
+		final String folder = "augment-pd";
+
 		String basePath = "";
 		Files.FileType baseFileType = null;
 		if (SharedLibraryLoader.os == Os.Windows) {
 			if (System.getProperties().getProperty("os.name").equals("Windows XP")) {
-				basePath = "Application Data/." + vendor + "/" + title + "/";
+				basePath = "Application Data/." + vendor + "/" + folder + "/";
 			} else {
-				basePath = "AppData/Roaming/." + vendor + "/" + title + "/";
+				basePath = "AppData/Roaming/." + vendor + "/" + folder + "/";
 			}
 			baseFileType = Files.FileType.External;
 		} else if (SharedLibraryLoader.os == Os.MacOsX) {
-			basePath = "Library/Application Support/" + title + "/";
+			basePath = "Library/Application Support/" + folder + "/";
 			baseFileType = Files.FileType.External;
 		} else if (SharedLibraryLoader.os == Os.Linux) {
 			String XDGHome = System.getenv("XDG_DATA_HOME");
 			if (XDGHome == null) XDGHome = System.getProperty("user.home") + "/.local/share";
 
-			String titleLinux = title.toLowerCase(Locale.ROOT).replace(" ", "-");
-			basePath = XDGHome + "/." + vendor + "/" + titleLinux + "/";
+			basePath = XDGHome + "/." + vendor + "/" + folder + "/";
 
 			baseFileType = Files.FileType.Absolute;
 		}

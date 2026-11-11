@@ -91,6 +91,7 @@ public class Hunger extends Buff implements Hero.Doom {
 					hungerDelay *= 1.5f;
 				}
 				hungerDelay /= SaltCube.hungerGainMultiplier();
+				if (com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()) hungerDelay /= com.shatteredpixel.shatteredpixeldungeon.augments.Augs.hungerRate();
 
 				float newLevel = level + (1f/hungerDelay);
 				if (newLevel >= STARVING) {
@@ -127,6 +128,7 @@ public class Hunger extends Buff implements Hero.Doom {
 
 	public void satisfy( float energy ) {
 		affectHunger( energy, false );
+		if (energy > 0 && target == Dungeon.hero && com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()) com.shatteredpixel.shatteredpixeldungeon.augments.Augs.onEat( (Hero) target );
 	}
 
 	public void affectHunger(float energy ){

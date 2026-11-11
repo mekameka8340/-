@@ -57,6 +57,7 @@ public class HighGrass {
 		if (freezeTrample) return;
 		
 		Char ch = Actor.findChar(pos);
+		if (level.map[pos] == Terrain.HIGH_GRASS) com.shatteredpixel.shatteredpixeldungeon.augments.AugX.onTrample( pos );
 		
 		if (level.map[pos] == Terrain.FURROWED_GRASS){
 			if (ch instanceof Hero && ((Hero) ch).heroClass == HeroClass.HUNTRESS){

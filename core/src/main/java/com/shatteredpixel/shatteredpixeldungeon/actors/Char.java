@@ -24,6 +24,7 @@ package com.shatteredpixel.shatteredpixeldungeon.actors;
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.SPDSettings;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Electricity;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.StormCloud;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.ToxicGas;
@@ -480,6 +481,10 @@ public abstract class Char extends Actor {
 				dmg *= 0.67f;
 			}
 
+			if (this == Dungeon.hero && com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()){
+				dmg = com.shatteredpixel.shatteredpixeldungeon.augments.Augs.modifyAttack( (Hero)this, enemy, dmg );
+			}
+
 			int effectiveDamage = enemy.defenseProc( this, Math.round(dmg) );
 			//do not trigger on-hit logic if defenseProc returned a negative value
 			if (effectiveDamage >= 0) {
@@ -496,6 +501,9 @@ public abstract class Char extends Actor {
 				}
 
 				effectiveDamage = attackProc(enemy, effectiveDamage);
+				if (this == Dungeon.hero && effectiveDamage > 1 && com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()){
+					effectiveDamage = com.shatteredpixel.shatteredpixeldungeon.augments.AugY.flurry((Hero)this, enemy, effectiveDamage);
+				}
 			}
 			if (visibleFight) {
 				if (effectiveDamage > 0 || !enemy.blockSound(Random.Float(0.96f, 1.05f))) {
@@ -582,6 +590,8 @@ public abstract class Char extends Actor {
 			
 		} else if (!Char.hasProp(enemy, Property.OBJECT)) {
 
+			if (enemy == Dungeon.hero) com.shatteredpixel.shatteredpixeldungeon.augments.AugX.onDodged( this );
+
 			if (enemy.sprite != null){
 				if (hitMissIcon != -1){
 					//dooking is a playful sound Ferrets can make, like low pitched chirping
@@ -617,6 +627,9 @@ public abstract class Char extends Actor {
 	}
 
 	public static boolean hit( Char attacker, Char defender, float accMulti, boolean magic ) {
+		if (defender == Dungeon.hero && attacker != defender && com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active() && com.shatteredpixel.shatteredpixeldungeon.augments.Augs.dodge()){
+			return false;
+		}
 		float acuStat = attacker.attackSkill( defender );
 		float defStat = defender.defenseSkill( attacker );
 
@@ -833,9 +846,22 @@ public abstract class Char extends Actor {
 			return;
 		}
 
+		//strong hits briefly light up the surroundings
+		if (dmg > 0 && HT > 0 && dmg >= HT * 0.25f && sprite != null && Dungeon.level != null
+				&& pos >= 0 && pos < Dungeon.level.length() && Dungeon.level.heroFOV[pos]) {
+			com.shatteredpixel.shatteredpixeldungeon.atmosphere.Atmosphere.burstCell( pos, 2.2f, 0.7f, 0xFFF0D8, 0.2f );
+		}
+
 		if(isInvulnerable(src.getClass())){
 			sprite.showStatus(CharSprite.POSITIVE, Messages.get(this, "invulnerable"));
 			return;
+		}
+
+		if (src instanceof com.shatteredpixel.shatteredpixeldungeon.items.wands.Wand && com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()){
+			dmg = com.shatteredpixel.shatteredpixeldungeon.augments.Augs.wandDamage( this, dmg );
+		}
+		if (src instanceof com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Poison && this != Dungeon.hero && com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()){
+			dmg = com.shatteredpixel.shatteredpixeldungeon.augments.AugX.poisonDamage( this, dmg );
 		}
 
 		if (!(src instanceof LifeLink || src instanceof Hunger) && buff(LifeLink.class) != null){
@@ -1021,6 +1047,11 @@ public abstract class Char extends Actor {
 			((Char) src).buff(Kinetic.KineticTracker.class).detach();
 		}
 		
+		if (this != Dungeon.hero && com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()){
+			com.shatteredpixel.shatteredpixeldungeon.augments.AugMoments.dealt(this, dmg + shielded, src,
+					com.shatteredpixel.shatteredpixeldungeon.augments.Augs.peekCrit(this));
+		}
+
 		if (sprite != null) {
 			//defaults to normal damage icon if no other ones apply
 			int                                                         icon = FloatingText.PHYS_DMG;
@@ -1063,7 +1094,15 @@ public abstract class Char extends Actor {
 			}
 			hitMissIcon = -1;
 
-			sprite.showStatusWithIcon(CharSprite.NEGATIVE, Integer.toString(dmg + shielded), icon);
+			boolean crit = com.shatteredpixel.shatteredpixeldungeon.augments.Augs.consumeCrit(this);
+			if (SPDSettings.damageNumbers()){
+				if (crit){
+					//critical hits from augments stand out in amber
+					sprite.showStatusWithIcon(0xFFA030, Integer.toString(dmg + shielded) + "!", icon);
+				} else {
+					sprite.showStatusWithIcon(CharSprite.NEGATIVE, Integer.toString(dmg + shielded), icon);
+				}
+			}
 		}
 
 		if (HP < 0) HP = 0;
@@ -1286,6 +1325,8 @@ public abstract class Char extends Actor {
 
 		stealth += Obfuscation.stealthBoost(this, glyphLevel(Obfuscation.class));
 
+		if (this == Dungeon.hero) stealth += com.shatteredpixel.shatteredpixeldungeon.augments.Augs.stealth();
+
 		return stealth;
 	}
 
@@ -1321,7 +1362,11 @@ public abstract class Char extends Actor {
 		} else {
 			previousPos = -1;
 		}
+		int augFrom = pos;
 		pos = step;
+		if (this == Dungeon.hero && com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()){
+			com.shatteredpixel.shatteredpixeldungeon.augments.AugX.onHeroMove( augFrom, step );
+		}
 		
 		if (this != Dungeon.hero) {
 			sprite.visible = Dungeon.level.heroFOV[pos];
@@ -1379,6 +1424,7 @@ public abstract class Char extends Actor {
 	
 	public boolean isImmune(Class effect ){
 		HashSet<Class> immunes = new HashSet<>(immunities);
+		if (this == Dungeon.hero && com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()) immunes.addAll(com.shatteredpixel.shatteredpixeldungeon.augments.Augs.immunities());
 		for (Property p : properties()){
 			immunes.addAll(p.immunities());
 		}

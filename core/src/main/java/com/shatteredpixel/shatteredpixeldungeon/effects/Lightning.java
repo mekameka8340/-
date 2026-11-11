@@ -128,6 +128,10 @@ public class Lightning extends Group {
 			start = from;
 			end = to;
 
+			com.shatteredpixel.shatteredpixeldungeon.atmosphere.Atmosphere.burst( to.x, to.y, 3.2f, 1.3f, 0xBBD4FF, 0.35f );
+			com.shatteredpixel.shatteredpixeldungeon.atmosphere.Atmosphere.burst( (from.x+to.x)/2f, (from.y+to.y)/2f, 2.5f, 0.8f, 0xBBD4FF, 0.3f );
+			com.shatteredpixel.shatteredpixeldungeon.atmosphere.PostFX.flash( 0xCCDDFF, 0.12f );
+
 			arc1 = new Image(Effects.get(Effects.Type.LIGHTNING));
 			arc1.x = start.x - arc1.origin.x;
 			arc1.y = start.y - arc1.origin.y;

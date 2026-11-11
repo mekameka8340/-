@@ -42,6 +42,32 @@
 		<activity
 			android:name=".AndroidMissingNativesHandler">
 		</activity>
+
+		<!-- seed finder workers, each in its own process -->
+		<service
+			android:name=".SeedFinderService$Worker1"
+			android:process=":seedfinder1"
+			android:exported="false" />
+		<service
+			android:name=".SeedFinderService$Worker2"
+			android:process=":seedfinder2"
+			android:exported="false" />
+		<service
+			android:name=".SeedFinderService$Worker3"
+			android:process=":seedfinder3"
+			android:exported="false" />
+		<service
+			android:name=".SeedFinderService$Worker4"
+			android:process=":seedfinder4"
+			android:exported="false" />
+		<service
+			android:name=".SeedFinderService$Worker5"
+			android:process=":seedfinder5"
+			android:exported="false" />
+		<service
+			android:name=".SeedFinderService$Worker6"
+			android:process=":seedfinder6"
+			android:exported="false" />
 	</application>
 
 </manifest>

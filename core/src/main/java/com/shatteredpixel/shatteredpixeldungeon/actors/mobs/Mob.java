@@ -1055,8 +1055,18 @@ public abstract class Mob extends Char {
 		}
 
 		boolean soulMarked = buff(SoulMark.class) != null;
+		boolean augKill = alignment == Alignment.ENEMY && com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active() && com.shatteredpixel.shatteredpixeldungeon.augments.Augs.heroCaused(cause);
+		if (augKill) com.shatteredpixel.shatteredpixeldungeon.augments.AugX.preKill(this, cause);
 
 		super.die( cause );
+
+		//after the body is gone, so effects can use the cell
+		if (augKill) com.shatteredpixel.shatteredpixeldungeon.augments.Augs.onKill(this);
+		//each of the five great bosses grants a prism choice
+		if (com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active() && (this instanceof Goo || this instanceof Tengu || this instanceof DM300
+				|| this instanceof DwarfKing || this instanceof YogDzewa)){
+			com.shatteredpixel.shatteredpixeldungeon.augments.Augs.onBossKill();
+		}
 
 		if (!(this instanceof Wraith)
 				&& soulMarked
@@ -1089,6 +1099,8 @@ public abstract class Mob extends Char {
 		}
 
 		dropBonus += ShardOfOblivion.lootChanceMultiplier()-1f;
+
+		dropBonus += com.shatteredpixel.shatteredpixeldungeon.augments.Augs.lootMultiplier()-1f;
 
 		return lootChance * dropBonus;
 	}
@@ -1725,7 +1737,8 @@ public abstract class Mob extends Char {
 		for (Mob mob : level.mobs.toArray( new Mob[0] )) {
 			//preserve directable allies or empowered intelligent allies no matter where they are
 			if (mob instanceof DirectableAlly
-				|| (mob.intelligentAlly && PowerOfMany.getPoweredAlly() == mob)) {
+				|| (mob.intelligentAlly && PowerOfMany.getPoweredAlly() == mob)
+				|| (mob.alignment == Alignment.ALLY && mob.buff(com.shatteredpixel.shatteredpixeldungeon.augments.AugAllies.Bond.class) != null)) {
 				if (mob instanceof DirectableAlly) {
 					((DirectableAlly) mob).clearDefensingPos();
 				}

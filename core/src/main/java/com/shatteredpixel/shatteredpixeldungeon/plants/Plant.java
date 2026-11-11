@@ -60,6 +60,7 @@ public abstract class Plant implements Bundlable {
 	public void trigger(){
 
 		Char ch = Actor.findChar(pos);
+		com.shatteredpixel.shatteredpixeldungeon.augments.AugX.onPlant( pos );
 
 		if (ch instanceof Hero){
 			((Hero) ch).interrupt();

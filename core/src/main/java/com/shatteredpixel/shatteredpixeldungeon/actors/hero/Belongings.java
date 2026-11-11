@@ -210,6 +210,10 @@ public class Belongings implements Iterable<Item> {
 		secondWep = (KindOfWeapon) bundle.get(SECOND_WEP);
 		if (secondWep() != null)    secondWep().activate(owner);
 
+		for (Item i : new Item[]{weapon, armor, artifact, misc, ring, secondWep}){
+			if (i != null) i.atmoKnown = true;
+		}
+
 		bundleRestoring = false;
 	}
 

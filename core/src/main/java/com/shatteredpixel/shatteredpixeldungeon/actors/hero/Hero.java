@@ -260,7 +260,12 @@ public class Hero extends Char {
 	public void updateHT( boolean boostHP ){
 		int curHT = HT;
 		
-		HT = 20 + 5*(lvl-1) + HTBoost;
+		//with the augment challenge levels give no health, augments do
+		if (com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()){
+			HT = com.shatteredpixel.shatteredpixeldungeon.augments.Augs.maxHP(20 + HTBoost);
+		} else {
+			HT = 20 + 5*(lvl-1) + HTBoost;
+		}
 		float multiplier = RingOfMight.HTMultiplier(this);
 		HT = Math.round(multiplier * HT);
 		
@@ -283,6 +288,8 @@ public class Hero extends Char {
 		if (buff != null){
 			strBonus += buff.boost();
 		}
+
+		strBonus += Math.round(com.shatteredpixel.shatteredpixeldungeon.augments.Augs.st(com.shatteredpixel.shatteredpixeldungeon.augments.St.STR));
 
 		if (hasTalent(Talent.STRONGMAN)){
 			strBonus += (int)Math.floor(STR * (0.03f + 0.05f*pointsInTalent(Talent.STRONGMAN)));
@@ -557,10 +564,11 @@ public class Hero extends Char {
 			accuracy *= 1.50f;
 		}
 		
+		float baseAcc = com.shatteredpixel.shatteredpixeldungeon.augments.Augs.accuracy(attackSkill);
 		if (!RingOfForce.fightingUnarmed(this)) {
-			return Math.max(1, Math.round(attackSkill * accuracy * wep.accuracyFactor( this, target )));
+			return Math.max(1, Math.round(baseAcc * accuracy * wep.accuracyFactor( this, target )));
 		} else {
-			return Math.max(1, Math.round(attackSkill * accuracy));
+			return Math.max(1, Math.round(baseAcc * accuracy));
 		}
 	}
 	
@@ -578,7 +586,7 @@ public class Hero extends Char {
 			return INFINITE_EVASION;
 		}
 		
-		float evasion = defenseSkill;
+		float evasion = com.shatteredpixel.shatteredpixeldungeon.augments.Augs.evasion(this, defenseSkill);
 		
 		evasion *= RingOfEvasion.evasionMultiplier( this );
 
@@ -661,6 +669,8 @@ public class Hero extends Char {
 		if (buff(HoldFast.class) != null){
 			dr += buff(HoldFast.class).armorBonus();
 		}
+
+		dr += com.shatteredpixel.shatteredpixeldungeon.augments.Augs.armorBonus();
 		
 		return dr;
 	}
@@ -735,6 +745,8 @@ public class Hero extends Char {
 		}
 
 		speed = AscensionChallenge.modifyHeroSpeed(speed);
+
+		speed = com.shatteredpixel.shatteredpixeldungeon.augments.Augs.moveSpeed(speed);
 		
 		return speed;
 		
@@ -789,7 +801,7 @@ public class Hero extends Char {
 
 		if (!RingOfForce.fightingUnarmed(this)) {
 			
-			return delay * belongings.attackingWeapon().delayFactor( this );
+			return com.shatteredpixel.shatteredpixeldungeon.augments.Augs.attackDelay(delay * belongings.attackingWeapon().delayFactor( this ));
 			
 		} else {
 			//Normally putting furor speed on unarmed attacks would be unnecessary
@@ -807,7 +819,7 @@ public class Hero extends Char {
 				delay = ((Weapon)belongings.weapon).augment.delayFactor(delay);
 			}
 
-			return delay/speed;
+			return com.shatteredpixel.shatteredpixeldungeon.augments.Augs.attackDelay(delay/speed);
 		}
 	}
 
@@ -838,6 +850,8 @@ public class Hero extends Char {
 		
 		//calls to dungeon.observe will also update hero's local FOV.
 		fieldOfView = Dungeon.level.heroFOV;
+
+		if (com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()) com.shatteredpixel.shatteredpixeldungeon.augments.AugX.heroTurn( this );
 
 		if (buff(Endure.EndureTracker.class) != null){
 			buff(Endure.EndureTracker.class).endEnduring();
@@ -1503,6 +1517,7 @@ public class Hero extends Char {
 	}
 	
 	public void rest( boolean fullRest ) {
+		if (com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()) com.shatteredpixel.shatteredpixeldungeon.augments.AugY.onRest( this );
 		spendAndNextConstant( TIME_TO_REST );
 		if (hasTalent(Talent.HOLD_FAST)){
 			if (heroClass != HeroClass.WARRIOR || buff(BrokenSeal.WarriorShield.class) != null) {
@@ -1578,6 +1593,8 @@ public class Hero extends Char {
 			break;
 		default:
 		}
+
+		com.shatteredpixel.shatteredpixeldungeon.augments.Augs.onHit( this, enemy, damage );
 		
 		return damage;
 	}
@@ -1607,6 +1624,8 @@ public class Hero extends Char {
 		if (rockArmor != null) {
 			damage = rockArmor.absorb(damage);
 		}
+
+		com.shatteredpixel.shatteredpixeldungeon.augments.Augs.onDefense( this, enemy, damage );
 		
 		return super.defenseProc( enemy, damage );
 	}
@@ -1629,6 +1648,10 @@ public class Hero extends Char {
 		if (buff(TimekeepersHourglass.timeStasis.class) != null
 				|| buff(TimeStasis.class) != null) {
 			return;
+		}
+
+		if (dmg > 0 && HT > 0 && dmg >= HT / 8f && !(src instanceof Hunger)) {
+			com.shatteredpixel.shatteredpixeldungeon.atmosphere.PostFX.flash( 0xFF2020, Math.min(0.3f, 0.6f * dmg / (float)HT) );
 		}
 
 		//regular damage interrupt, triggers on any damage except specific mild DOT effects
@@ -1677,14 +1700,23 @@ public class Hero extends Char {
 		//we ceil this one to avoid letting the player easily take 0 dmg from tenacity early
 		dmg = (int)Math.ceil(dmg * RingOfTenacity.damageMultiplier( this ));
 
+		if (com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()){
+			if (com.shatteredpixel.shatteredpixeldungeon.augments.AugX.absorbPoison( this, dmg, src )) return;
+			dmg = com.shatteredpixel.shatteredpixeldungeon.augments.Augs.reduceDamage( this, dmg, src );
+			dmg = com.shatteredpixel.shatteredpixeldungeon.augments.Augs.lastStand( this, dmg );
+		}
+
 		int preHP = HP + shielding();
 		if (src instanceof Hunger) preHP -= shielding();
 		super.damage( dmg, src );
+		com.shatteredpixel.shatteredpixeldungeon.augments.Augs.afterLastStand( this );
 		int postHP = HP + shielding();
 		if (src instanceof Hunger) postHP -= shielding();
 		int effectiveDamage = preHP - postHP;
 
 		if (effectiveDamage <= 0) return;
+
+		com.shatteredpixel.shatteredpixeldungeon.augments.Augs.afterDamage( this, effectiveDamage );
 
 		if (buff(Challenge.DuelParticipant.class) != null){
 			buff(Challenge.DuelParticipant.class).addDamage(effectiveDamage);
@@ -2009,6 +2041,10 @@ public class Hero extends Char {
 	
 	public void earnExp( int exp, Class source ) {
 
+		if (com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active() && exp > 0 && source != AscensionChallenge.class){
+			exp = com.shatteredpixel.shatteredpixeldungeon.augments.Augs.scaleExp(exp);
+		}
+
 		//xp granted by ascension challenge is only for on-exp gain effects
 		if (source != AscensionChallenge.class) {
 			this.exp += exp;
@@ -2071,9 +2107,17 @@ public class Hero extends Char {
 					buff(ElixirOfMight.HTBoost.class).onLevelUp();
 				}
 				
-				updateHT( true );
-				attackSkill++;
-				defenseSkill++;
+				if (com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()){
+					//accuracy and evasion still grow with levels, health comes only from augments
+					com.shatteredpixel.shatteredpixeldungeon.augments.Augs.onLevelUp( this );
+					updateHT( true );
+					attackSkill++;
+					defenseSkill++;
+				} else {
+					updateHT( true );
+					attackSkill++;
+					defenseSkill++;
+				}
 
 			} else {
 				Buff.prolong(this, Bless.class, Bless.DURATION);
@@ -2090,9 +2134,14 @@ public class Hero extends Char {
 			
 			if (sprite != null) {
 				GLog.newLine();
-				GLog.p( Messages.get(this, "new_level") );
+				if (com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()){
+					GLog.p( "레벨 업! 명중과 회피가 올랐습니다. 증강을 하나 선택하세요." );
+				} else {
+					GLog.p( Messages.get(this, "new_level") );
+				}
 				sprite.showStatus( CharSprite.POSITIVE, Messages.get(Hero.class, "level_up") );
 				Sample.INSTANCE.play( Assets.Sounds.LEVELUP );
+				com.shatteredpixel.shatteredpixeldungeon.atmosphere.Ambience.levelUp( this );
 				if (lvl < Talent.tierLevelThresholds[Talent.MAX_TALENT_TIERS+1]){
 					GLog.newLine();
 					GLog.p( Messages.get(this, "new_talent") );
@@ -2169,6 +2218,8 @@ public class Hero extends Char {
 
 	@Override
 	public void die( Object cause ) {
+		if (com.shatteredpixel.shatteredpixeldungeon.augments.Augs.tryRevive( this )) return;
+		com.shatteredpixel.shatteredpixeldungeon.atmosphere.Ambience.onHeroDeath();
 		
 		curAction = null;
 

@@ -151,9 +151,16 @@ public class Bones {
 		return item;
 	}
 
+	//set while the seed finder generates levels, so it never touches the player's remains
+	public static boolean skipForFinder = false;
+
 	public static ArrayList<Item> get() {
 		//daily runs do not interact with remains
 		if (Dungeon.daily){
+			return null;
+		}
+		//in this mod seeded runs don't either, so a seed always generates the same dungeon
+		if (skipForFinder || !Dungeon.customSeedText.isEmpty()){
 			return null;
 		}
 

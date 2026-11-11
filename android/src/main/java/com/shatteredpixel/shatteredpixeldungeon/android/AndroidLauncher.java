@@ -92,6 +92,8 @@ public class AndroidLauncher extends AndroidApplication {
 
 			Gdx.app = this;
 
+			com.shatteredpixel.shatteredpixeldungeon.seedfinder.ParallelSearch.backend = new AndroidParallelSearch(this);
+
 			//we want to try and ID if we were installed by a 3rd party appstore.
 			// If so we vary update and news checking a bit.
 			String installer;

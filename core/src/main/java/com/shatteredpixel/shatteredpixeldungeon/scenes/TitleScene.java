@@ -115,11 +115,12 @@ public class TitleScene extends PixelScene {
 		align(title);
 
 		if (landscape()){
-			leftFB = placeTorch(title.x + 30, title.y + 35);
-			rightFB = placeTorch(title.x + title.width - 30, title.y + 35);
+			//torches set beside this mod's logo, which is wider than the original one
+			leftFB = placeTorch(title.x + 18, title.y + 42);
+			rightFB = placeTorch(title.x + title.width - 18, title.y + 42);
 		} else {
-			leftFB = placeTorch(title.x + 16, title.y + 70);
-			rightFB = placeTorch(title.x + title.width - 16, title.y + 70);
+			leftFB = placeTorch(title.x + 10, title.y + 72);
+			rightFB = placeTorch(title.x + title.width - 10, title.y + 72);
 		}
 
 		signs = new Image(BannerSprites.get( landscape() ? BannerSprites.Type.TITLE_GLOW_LAND : BannerSprites.Type.TITLE_GLOW_PORT)){
@@ -195,7 +196,8 @@ public class TitleScene extends PixelScene {
 
 		btnNews = new NewsButton(GREY_TR, Messages.get(this, "news"));
 		btnNews.icon(Icons.get(Icons.NEWS));
-		add(btnNews);
+		//this mod has no news feed of its own, and the official one is about the official game
+		//add(btnNews);
 
 		btnChanges = new ChangesButton(GREY_TR, Messages.get(this, "changes"));
 		btnChanges.icon(Icons.get(Icons.CHANGES));
@@ -224,21 +226,23 @@ public class TitleScene extends PixelScene {
 			btnPlay.setRect(btnAreaLeft, insets.top + topRegion+GAP, (buttonAreaWidth/2)-1, BTN_HEIGHT);
 			align(btnPlay);
 			btnSupport.setRect(btnPlay.right()+2, btnPlay.top(), btnPlay.width(), BTN_HEIGHT);
-			btnRankings.setRect(btnPlay.left(), btnPlay.bottom()+ GAP, (float) (Math.floor(buttonAreaWidth/3f)-1), BTN_HEIGHT);
-			btnJournal.setRect(btnRankings.right()+2, btnRankings.top(), btnRankings.width(), BTN_HEIGHT);
-			btnNews.setRect(btnJournal.right()+2, btnJournal.top(), btnRankings.width(), BTN_HEIGHT);
-			btnSettings.setRect(btnRankings.left(), btnRankings.bottom() + GAP, btnRankings.width(), BTN_HEIGHT);
-			btnChanges.setRect(btnSettings.right()+2, btnSettings.top(), btnRankings.width(), BTN_HEIGHT);
-			btnAbout.setRect(btnChanges.right()+2, btnSettings.top(), btnRankings.width(), BTN_HEIGHT);
+			float third = (float) (Math.floor(buttonAreaWidth/3f)-1);
+			float half = (float) (Math.floor((buttonAreaWidth - 2)/2f));
+			btnRankings.setRect(btnPlay.left(), btnPlay.bottom()+ GAP, half, BTN_HEIGHT);
+			btnJournal.setRect(btnRankings.right()+2, btnRankings.top(), buttonAreaWidth - half - 2, BTN_HEIGHT);
+			btnNews.setRect(btnJournal.right()+2, btnJournal.top(), 0, BTN_HEIGHT);
+			btnSettings.setRect(btnRankings.left(), btnRankings.bottom() + GAP, third, BTN_HEIGHT);
+			btnChanges.setRect(btnSettings.right()+2, btnSettings.top(), third, BTN_HEIGHT);
+			btnAbout.setRect(btnChanges.right()+2, btnSettings.top(), third, BTN_HEIGHT);
 		} else {
 			btnPlay.setRect(btnAreaLeft, insets.top + topRegion+GAP, buttonAreaWidth, BTN_HEIGHT);
 			align(btnPlay);
 			btnSupport.setRect(btnPlay.left(), btnPlay.bottom()+ GAP, btnPlay.width(), BTN_HEIGHT);
 			btnRankings.setRect(btnPlay.left(), btnSupport.bottom()+ GAP, (btnPlay.width()/2)-1, BTN_HEIGHT);
 			btnJournal.setRect(btnRankings.right()+2, btnRankings.top(), btnRankings.width(), BTN_HEIGHT);
-			btnNews.setRect(btnRankings.left(), btnRankings.bottom()+ GAP, btnRankings.width(), BTN_HEIGHT);
-			btnChanges.setRect(btnNews.right()+2, btnNews.top(), btnNews.width(), BTN_HEIGHT);
-			btnSettings.setRect(btnNews.left(), btnNews.bottom()+GAP, btnRankings.width(), BTN_HEIGHT);
+			btnNews.setRect(btnRankings.left(), btnRankings.bottom()+ GAP, 0, BTN_HEIGHT);
+			btnChanges.setRect(btnRankings.left(), btnRankings.bottom()+ GAP, btnPlay.width(), BTN_HEIGHT);
+			btnSettings.setRect(btnChanges.left(), btnChanges.bottom()+GAP, btnRankings.width(), BTN_HEIGHT);
 			btnAbout.setRect(btnSettings.right()+2, btnSettings.top(), btnSettings.width(), BTN_HEIGHT);
 		}
 

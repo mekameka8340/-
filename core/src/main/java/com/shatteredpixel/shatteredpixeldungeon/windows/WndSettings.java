@@ -226,6 +226,10 @@ public class WndSettings extends WndTabbed {
 		OptionSlider optVisGrid;
 		OptionSlider optFollowIntensity;
 		OptionSlider optScreenShake;
+		OptionSlider optAtmosphere;
+		OptionSlider optAtmoBright;
+		CheckBox chkDmgNumbers;
+		CheckBox chkAugPops;
 
 		@Override
 		protected void createChildren() {
@@ -312,6 +316,46 @@ public class WndSettings extends WndTabbed {
 			optScreenShake.setSelectedValue(SPDSettings.screenShake());
 			add(optScreenShake);
 
+			optAtmosphere = new OptionSlider(Messages.get(this, "atmosphere"),
+					Messages.get(this, "off"), Messages.get(this, "high"), 0, 3) {
+				@Override
+				protected void onChange() {
+					SPDSettings.atmosphere(getSelectedValue());
+				}
+			};
+			optAtmosphere.setSelectedValue(SPDSettings.atmosphere());
+			add(optAtmosphere);
+
+			optAtmoBright = new OptionSlider(Messages.get(this, "atmo_bright"),
+					Messages.get(this, "atmo_bright_default"), Messages.get(this, "high"), 0, 4) {
+				@Override
+				protected void onChange() {
+					SPDSettings.atmoBright(getSelectedValue());
+				}
+			};
+			optAtmoBright.setSelectedValue(SPDSettings.atmoBright());
+			add(optAtmoBright);
+
+			chkDmgNumbers = new CheckBox(Messages.get(this, "damage_numbers")){
+				@Override
+				protected void onClick() {
+					super.onClick();
+					SPDSettings.damageNumbers(checked());
+				}
+			};
+			chkDmgNumbers.checked(SPDSettings.damageNumbers());
+			add(chkDmgNumbers);
+
+			chkAugPops = new CheckBox(Messages.get(this, "augment_pops")){
+				@Override
+				protected void onClick() {
+					super.onClick();
+					SPDSettings.augmentPops(checked());
+				}
+			};
+			chkAugPops.checked(SPDSettings.augmentPops());
+			add(chkAugPops);
+
 		}
 
 		@Override
@@ -343,15 +387,29 @@ public class WndSettings extends WndTabbed {
 
 				optFollowIntensity.setRect(0, optVisGrid.bottom() + GAP, width/2-GAP/2, SLIDER_HEIGHT);
 				optScreenShake.setRect(optFollowIntensity.right() + GAP, optFollowIntensity.top(), width/2-GAP/2, SLIDER_HEIGHT);
+
+				optAtmosphere.setRect(0, optScreenShake.bottom() + GAP, width/2-GAP/2, SLIDER_HEIGHT);
+				optAtmoBright.setRect(optAtmosphere.right() + GAP, optAtmosphere.top(), width/2-GAP/2, SLIDER_HEIGHT);
 			} else {
 				optBrightness.setRect(0, bottom + GAP, width, SLIDER_HEIGHT);
 				optVisGrid.setRect(0, optBrightness.bottom() + GAP, width, SLIDER_HEIGHT);
 
 				optFollowIntensity.setRect(0, optVisGrid.bottom() + GAP, width, SLIDER_HEIGHT);
 				optScreenShake.setRect(0, optFollowIntensity.bottom() + GAP, width, SLIDER_HEIGHT);
+
+				optAtmosphere.setRect(0, optScreenShake.bottom() + GAP, width, SLIDER_HEIGHT);
+				optAtmoBright.setRect(0, optAtmosphere.bottom() + GAP, width, SLIDER_HEIGHT);
 			}
 
-			height = optScreenShake.bottom();
+			if (width > 200){
+				chkDmgNumbers.setRect(0, optAtmoBright.bottom() + GAP, width/2-GAP/2, BTN_HEIGHT);
+				chkAugPops.setRect(chkDmgNumbers.right() + GAP, chkDmgNumbers.top(), width/2-GAP/2, BTN_HEIGHT);
+			} else {
+				chkDmgNumbers.setRect(0, optAtmoBright.bottom() + GAP, width, BTN_HEIGHT);
+				chkAugPops.setRect(0, chkDmgNumbers.bottom() + GAP, width, BTN_HEIGHT);
+			}
+
+			height = chkAugPops.bottom();
 		}
 
 	}

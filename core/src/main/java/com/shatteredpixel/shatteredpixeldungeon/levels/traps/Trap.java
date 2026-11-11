@@ -100,6 +100,7 @@ public abstract class Trap implements Bundlable {
 			Dungeon.level.discover(pos);
 			Bestiary.setSeen(getClass());
 			Bestiary.countEncounter(getClass());
+			com.shatteredpixel.shatteredpixeldungeon.augments.AugX.onTrap( pos );
 			activate();
 		}
 	}

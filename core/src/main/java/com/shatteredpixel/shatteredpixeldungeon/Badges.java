@@ -312,6 +312,11 @@ public class Badges {
 		store( bundle, local );
 	}
 	
+	//used by seed finder worker processes, which have no save files
+	public static void setEmptyGlobal(){
+		global = new HashSet<>();
+	}
+
 	public static void loadGlobal() {
 		if (global == null) {
 			try {

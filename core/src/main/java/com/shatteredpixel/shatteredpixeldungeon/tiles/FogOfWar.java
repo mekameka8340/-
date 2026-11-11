@@ -169,11 +169,26 @@ public class FogOfWar extends Image {
 	private boolean[] mapped;
 	private int brightness;
 	
+	//veil colour for a fog state. the "remembered area brightness" setting thins the veil
+	// over places that were seen before, without touching unexplored darkness
+	private int fogColor( int state ){
+		int c = FOG_COLORS[state][brightness];
+		if ((state == VISITED || state == MAPPED) && rememberLevel > 0){
+			int a = (c >>> 24) & 0xFF;
+			a = Math.round(a * (1f - 0.17f * rememberLevel));
+			c = (a << 24) | (c & 0xFFFFFF);
+		}
+		return c;
+	}
+
+	private int rememberLevel;
+
 	private void updateTexture( boolean[] visible, boolean[] visited, boolean[] mapped ) {
 		this.visible = visible;
 		this.visited = visited;
 		this.mapped = mapped;
 		this.brightness = SPDSettings.brightness() + 1;
+		this.rememberLevel = SPDSettings.atmoBright();
 
 		moveToUpdating();
 		
@@ -202,7 +217,7 @@ public class FogOfWar extends Image {
 						//we skip filling cells here if it isn't a full update
 						// because they must already be dark
 						if (fullUpdate)
-							fillCell(fog, j, i, FOG_COLORS[INVISIBLE][brightness]);
+							fillCell(fog, j, i, fogColor(INVISIBLE));
 						cell++;
 						continue;
 					}
@@ -212,7 +227,7 @@ public class FogOfWar extends Image {
 						
 						//always dark if nothing is beneath them
 						if (cell + mapWidth >= mapLength) {
-							fillCell(fog, j, i, FOG_COLORS[INVISIBLE][brightness]);
+							fillCell(fog, j, i, fogColor(INVISIBLE));
 							
 						//internal wall tiles, need to check both the left and right side,
 						// to account for only one half of them being seen
@@ -226,17 +241,17 @@ public class FogOfWar extends Image {
 									
 									//if below-left is also a wall, then we should be dark no matter what.
 									if (wall(cell + mapWidth - 1)) {
-										fillLeft(fog, j, i, FOG_COLORS[INVISIBLE][brightness]);
+										fillLeft(fog, j, i, fogColor(INVISIBLE));
 									} else {
-										fillLeft(fog, j, i, FOG_COLORS[Math.max(getCellFog(cell), Math.max(getCellFog(cell + mapWidth - 1), getCellFog(cell - 1)))][brightness]);
+										fillLeft(fog, j, i, fogColor(Math.max(getCellFog(cell), Math.max(getCellFog(cell + mapWidth - 1), getCellFog(cell - 1)))));
 									}
 									
 								} else {
-									fillLeft(fog, j, i, FOG_COLORS[Math.max(getCellFog(cell), getCellFog(cell - 1))][brightness]);
+									fillLeft(fog, j, i, fogColor(Math.max(getCellFog(cell), getCellFog(cell - 1))));
 								}
 								
 							} else {
-								fillLeft(fog, j, i, FOG_COLORS[INVISIBLE][brightness]);
+								fillLeft(fog, j, i, fogColor(INVISIBLE));
 							}
 							
 							//right side
@@ -247,28 +262,28 @@ public class FogOfWar extends Image {
 									
 									//if below-right is also a wall, then we should be dark no matter what.
 									if (wall(cell + mapWidth + 1)) {
-										fillRight(fog, j, i, FOG_COLORS[INVISIBLE][brightness]);
+										fillRight(fog, j, i, fogColor(INVISIBLE));
 									} else {
-										fillRight(fog, j, i, FOG_COLORS[Math.max(getCellFog(cell), Math.max(getCellFog(cell + mapWidth + 1), getCellFog(cell + 1)))][brightness]);
+										fillRight(fog, j, i, fogColor(Math.max(getCellFog(cell), Math.max(getCellFog(cell + mapWidth + 1), getCellFog(cell + 1)))));
 									}
 									
 								} else {
-									fillRight(fog, j, i, FOG_COLORS[Math.max(getCellFog(cell), getCellFog(cell + 1))][brightness]);
+									fillRight(fog, j, i, fogColor(Math.max(getCellFog(cell), getCellFog(cell + 1))));
 								}
 								
 							} else {
-								fillRight(fog, j, i, FOG_COLORS[INVISIBLE][brightness]);
+								fillRight(fog, j, i, fogColor(INVISIBLE));
 							}
 							
 						//camera-facing wall tiles
 						//darkest between themselves and the tile below them
 						} else {
-							fillCell(fog, j, i, FOG_COLORS[Math.max(getCellFog(cell), getCellFog(cell + mapWidth))][brightness]);
+							fillCell(fog, j, i, fogColor(Math.max(getCellFog(cell), getCellFog(cell + mapWidth))));
 						}
 						
 					//other tiles, just their direct value
 					} else {
-						fillCell(fog, j, i, FOG_COLORS[getCellFog(cell)][brightness]);
+						fillCell(fog, j, i, fogColor(getCellFog(cell)));
 					}
 					
 					cell++;

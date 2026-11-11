@@ -229,11 +229,9 @@ public class HeroSelectScene extends PixelScene {
 		updateOptionsColor();
 		btnOptions.visible = false;
 
-		if(!SPDSettings.intro()){
-			add(btnOptions);
-		}
+		add(btnOptions);
 
-		if (!Badges.isUnlocked(Badges.Badge.VICTORY) && !DeviceCompat.isDebug()){
+		if (false /*unlocked from start*/){
 			Dungeon.challenges = 0;
 			SPDSettings.challenges(0);
 			SPDSettings.customSeed("");
@@ -454,7 +452,7 @@ public class HeroSelectScene extends PixelScene {
 			infoButton.setPos(heroName.right(), heroName.top() + (heroName.height() - infoButton.height())/2f);
 			align(infoButton);
 
-			btnOptions.visible = btnOptions.active = !SPDSettings.intro();
+			btnOptions.visible = btnOptions.active = true;
 
 		} else {
 			title.visible = false;
@@ -469,7 +467,7 @@ public class HeroSelectScene extends PixelScene {
 			infoButton.visible = infoButton.active = true;
 			infoButton.setPos(startBtn.right(), startBtn.top());
 
-			btnOptions.visible = btnOptions.active = !SPDSettings.intro();
+			btnOptions.visible = btnOptions.active = true;
 			btnOptions.setPos(startBtn.left()-btnOptions.width(), startBtn.top());
 
 			optionsPane.setPos(heroBtns.get(0).left(), startBtn.top() - optionsPane.height() - 2);
@@ -639,7 +637,7 @@ public class HeroSelectScene extends PixelScene {
 			StyledButton seedButton = new StyledButton(Chrome.Type.BLANK, Messages.get(HeroSelectScene.class, "custom_seed"), 6){
 				@Override
 				protected void onClick() {
-					if (!Badges.isUnlocked(Badges.Badge.VICTORY) && !DeviceCompat.isDebug()){
+					if (false /*unlocked from start*/){
 						ShatteredPixelDungeon.scene().addToFront( new WndTitledMessage(
 								Icons.get(Icons.SEED),
 								Messages.get(HeroSelectScene.class, "custom_seed"),
@@ -689,6 +687,17 @@ public class HeroSelectScene extends PixelScene {
 			buttons.add(seedButton);
 			add(seedButton);
 
+			StyledButton finderButton = new StyledButton(Chrome.Type.BLANK, "시드 파인더", 6){
+				@Override
+				protected void onClick() {
+					ShatteredPixelDungeon.scene().addToFront( new com.shatteredpixel.shatteredpixeldungeon.seedfinder.WndSeedFinder() );
+				}
+			};
+			finderButton.leftJustify = true;
+			finderButton.icon(Icons.get(Icons.MAGNIFY));
+			buttons.add(finderButton);
+			add(finderButton);
+
 			StyledButton dailyButton = new StyledButton(Chrome.Type.BLANK, Messages.get(HeroSelectScene.class, "daily"), 6){
 
 				private static final long SECOND = 1000;
@@ -700,7 +709,7 @@ public class HeroSelectScene extends PixelScene {
 				protected void onClick() {
 					super.onClick();
 
-					if (!Badges.isUnlocked(Badges.Badge.VICTORY) && !DeviceCompat.isDebug()){
+					if (false /*unlocked from start*/){
 						ShatteredPixelDungeon.scene().addToFront( new WndTitledMessage(
 								Icons.get(Icons.CALENDAR),
 								Messages.get(HeroSelectScene.class, "daily"),
@@ -798,7 +807,7 @@ public class HeroSelectScene extends PixelScene {
 			challengeButton = new StyledButton(Chrome.Type.BLANK, Messages.get(WndChallenges.class, "title"), 6){
 				@Override
 				protected void onClick() {
-					if (!Badges.isUnlocked(Badges.Badge.VICTORY) && !DeviceCompat.isDebug()){
+					if (false /*unlocked from start*/){
 						ShatteredPixelDungeon.scene().addToFront( new WndTitledMessage(
 								Icons.get(Icons.CHALLENGE_GREY),
 								Messages.get(WndChallenges.class, "title"),
@@ -831,7 +840,7 @@ public class HeroSelectScene extends PixelScene {
 					@Override
 					protected void onClick() {
 
-						if (Badges.isUnlocked(Badges.Badge.VICTORY) || DeviceCompat.isDebug()){
+						if (true /*unlocked from start*/){
 							ShatteredPixelDungeon.scene().addToFront(new WndRandomize());
 						} else {
 

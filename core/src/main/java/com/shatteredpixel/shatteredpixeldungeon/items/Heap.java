@@ -82,6 +82,7 @@ public class Heap implements Bundlable {
 	public LinkedList<Item> items = new LinkedList<>();
 	
 	public void open( Hero hero ) {
+		Type augType = type;
 		switch (type) {
 		case TOMB:
 			Wraith.spawnAround( hero.pos );
@@ -113,6 +114,8 @@ public class Heap implements Bundlable {
 		}
 		sprite.link();
 		sprite.drop();
+		com.shatteredpixel.shatteredpixeldungeon.atmosphere.Ambience.heapOpened( this );
+		com.shatteredpixel.shatteredpixeldungeon.augments.AugX.onHeapOpened( this, augType );
 	}
 	
 	public Heap setHauntedIfCursed(){

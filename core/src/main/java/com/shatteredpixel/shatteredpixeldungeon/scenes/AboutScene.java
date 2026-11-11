@@ -64,6 +64,19 @@ public class AboutScene extends PixelScene {
 		Component content = list.content();
 		content.clear();
 
+		//*** this mod, above everything else; the original credits all follow, unchanged ***
+		CreditsBlock mod = new CreditsBlock(true, 0xC08CFF,
+				"증강 픽던",
+				null,
+				"모드 제작: _하남자 매직심포니_\nShattered Pixel Dungeon 4.0.2 기반 비공식 모드\n원작 개발자와 무관하니, 문의는 모드 제작자에게 해 주세요.",
+				null,
+				null);
+		mod.setRect((w - 200)/2f, insets.top + 6, 200, 0);
+		content.add(mod);
+		addLine(mod.bottom() + 5, content);
+		//everything below starts under it
+		insets.top = mod.bottom() + 8;
+
 		//*** Shattered Pixel Dungeon Credits ***
 
 		CreditsBlock shpx = new CreditsBlock(true, Window.SHPX_COLOR,

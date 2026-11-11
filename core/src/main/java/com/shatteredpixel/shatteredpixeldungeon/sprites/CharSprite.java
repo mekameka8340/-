@@ -231,6 +231,8 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 			GameScene.ripple( from );
 		}
 
+		com.shatteredpixel.shatteredpixeldungeon.atmosphere.Ambience.onMove( this, from, to );
+
 	}
 	
 	public static void setMoveInterval( float interval){
@@ -346,6 +348,7 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 	
 	public void bloodBurstA( PointF from, int damage ) {
 		if (visible) {
+			com.shatteredpixel.shatteredpixeldungeon.atmosphere.Ambience.onBlood( this, blood(), damage );
 			PointF c = center();
 			int n = (int)Math.min( 9 * Math.sqrt( (double)damage / ch.HT ), 9 );
 			Splash.at( c, PointF.angle( from, c ), 3.1415926f / 2, blood(), n );

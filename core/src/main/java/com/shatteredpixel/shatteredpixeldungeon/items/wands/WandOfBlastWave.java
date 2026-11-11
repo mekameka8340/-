@@ -122,6 +122,7 @@ public class WandOfBlastWave extends DamageWand {
 		if (ch.properties().contains(Char.Property.BOSS)) {
 			power = (power+1)/2;
 		}
+		if (com.shatteredpixel.shatteredpixeldungeon.augments.AugY.immovable(ch)) return;
 
 		int dist = Math.min(trajectory.dist, power);
 

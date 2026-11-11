@@ -276,16 +276,16 @@ public enum Document {
 		ADVENTURERS_GUIDE.pagesStates.put("Magic",              debug ? READ : NOT_FOUND);
 		
 		//given in sewers
-		ALCHEMY_GUIDE.pagesStates.put("Potions",                debug ? READ : NOT_FOUND);
-		ALCHEMY_GUIDE.pagesStates.put("Stones",                 debug ? READ : NOT_FOUND);
-		ALCHEMY_GUIDE.pagesStates.put("Energy_Food",            debug ? READ : NOT_FOUND);
-		ALCHEMY_GUIDE.pagesStates.put("Exotic_Potions",         debug ? READ : NOT_FOUND);
-		ALCHEMY_GUIDE.pagesStates.put("Exotic_Scrolls",         debug ? READ : NOT_FOUND);
+		ALCHEMY_GUIDE.pagesStates.put("Potions",                READ);
+		ALCHEMY_GUIDE.pagesStates.put("Stones",                 READ);
+		ALCHEMY_GUIDE.pagesStates.put("Energy_Food",            READ);
+		ALCHEMY_GUIDE.pagesStates.put("Exotic_Potions",         READ);
+		ALCHEMY_GUIDE.pagesStates.put("Exotic_Scrolls",         READ);
 		//given in prison
-		ALCHEMY_GUIDE.pagesStates.put("Bombs",                  debug ? READ : NOT_FOUND);
-		ALCHEMY_GUIDE.pagesStates.put("Weapons",                debug ? READ : NOT_FOUND);
-		ALCHEMY_GUIDE.pagesStates.put("Brews_Elixirs",          debug ? READ : NOT_FOUND);
-		ALCHEMY_GUIDE.pagesStates.put("Spells",                 debug ? READ : NOT_FOUND);
+		ALCHEMY_GUIDE.pagesStates.put("Bombs",                  READ);
+		ALCHEMY_GUIDE.pagesStates.put("Weapons",                READ);
+		ALCHEMY_GUIDE.pagesStates.put("Brews_Elixirs",          READ);
+		ALCHEMY_GUIDE.pagesStates.put("Spells",                 READ);
 
 		INTROS.pagesStates.put("Dungeon",                       READ);
 		INTROS.pagesStates.put("Sewers",                        debug ? READ : NOT_FOUND);
@@ -373,6 +373,11 @@ public enum Document {
 					}
 				}
 			}
+		}
+
+		//every alchemy recipe is known from the start in this mod
+		for (String page : ALCHEMY_GUIDE.pageNames()){
+			ALCHEMY_GUIDE.pagesStates.put(page, READ);
 		}
 	}
 	

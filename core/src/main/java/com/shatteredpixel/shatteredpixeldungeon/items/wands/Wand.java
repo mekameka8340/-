@@ -118,6 +118,8 @@ public abstract class Wand extends Item {
 		super.execute( hero, action );
 
 		if (action.equals( AC_ZAP )) {
+
+			if (com.shatteredpixel.shatteredpixeldungeon.augments.AugY.wandsForbidden()) return;
 			
 			curUser = hero;
 			curItem = this;
@@ -486,7 +488,10 @@ public abstract class Wand extends Item {
 			}
 		}
 		
-		curCharges -= cursed ? 1 : chargesPerCast();
+		if (curUser == Dungeon.hero && !cursed) com.shatteredpixel.shatteredpixeldungeon.augments.AugX.onWandUsed();
+		if (cursed || curUser != Dungeon.hero || !com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active() || !com.shatteredpixel.shatteredpixeldungeon.augments.Augs.freeWandCharge()){
+			curCharges -= cursed ? 1 : chargesPerCast();
+		}
 
 		//remove magic charge at a higher priority, if we are benefiting from it are and not the
 		//wand that just applied it
@@ -767,6 +772,7 @@ public abstract class Wand extends Item {
 						curWand.fx(shot, new Callback() {
 							public void call() {
 								curWand.onZap(shot);
+								if (curUser == Dungeon.hero) com.shatteredpixel.shatteredpixeldungeon.augments.AugY.onWandZap(curWand, shot);
 								if (Random.Float() < WondrousResin.extraCurseEffectChance()){
 									WondrousResin.forcePositive = true;
 									CursedWand.cursedZap(curWand,

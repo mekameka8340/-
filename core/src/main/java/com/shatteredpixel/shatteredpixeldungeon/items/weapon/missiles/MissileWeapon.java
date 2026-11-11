@@ -411,6 +411,7 @@ abstract public class MissileWeapon extends Weapon {
 	protected void rangedHit( Char enemy, int cell ){
 		decrementDurability();
 		if (durability > 0 && !spawnedForEffect){
+			if (curUser == Dungeon.hero && com.shatteredpixel.shatteredpixeldungeon.augments.AugY.boomerang(this, cell)) return;
 			//ALL projectiles stick to the vault boss elemental, as it has custom logic for it
 			boolean doesStick = sticky || enemy instanceof VaultBossElemental;
 			//attempt to stick the missile weapon to the enemy, just drop it if we can't.
@@ -427,6 +428,7 @@ abstract public class MissileWeapon extends Weapon {
 	
 	protected void rangedMiss( int cell ) {
 		parent = null;
+		if (!spawnedForEffect && curUser == Dungeon.hero && com.shatteredpixel.shatteredpixeldungeon.augments.AugY.boomerang(this, cell)) return;
 		if (!spawnedForEffect) super.onThrow(cell);
 	}
 
@@ -467,6 +469,7 @@ abstract public class MissileWeapon extends Weapon {
 
 		if (Dungeon.hero != null) {
 			usages *= RingOfSharpshooting.durabilityMultiplier( Dungeon.hero );
+			if (com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()) usages *= com.shatteredpixel.shatteredpixeldungeon.augments.Augs.durability();
 		}
 
 		if (enchantment instanceof Crystal){

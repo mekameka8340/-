@@ -284,6 +284,11 @@ public class Dungeon {
 		Badges.reset();
 		
 		GamesInProgress.selectedClass.initHero( hero );
+
+		if (isChallenged(Challenges.AUGMENTS)){
+			com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff.affect(hero,
+					com.shatteredpixel.shatteredpixeldungeon.augments.AugTracker.class).startNew();
+		}
 	}
 
 	public static boolean isChallenged( int mask ) {

@@ -62,7 +62,10 @@ public class Gold extends Item {
 		Catalog.setSeen(getClass());
 		Statistics.itemTypesDiscovered.add(getClass());
 
+		if (com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()) quantity = com.shatteredpixel.shatteredpixeldungeon.augments.Augs.scaleGold(quantity);
+
 		Dungeon.gold += quantity;
+		com.shatteredpixel.shatteredpixeldungeon.augments.AugX.onGold( quantity );
 		Statistics.goldCollected += quantity;
 		Badges.validateGoldCollected();
 

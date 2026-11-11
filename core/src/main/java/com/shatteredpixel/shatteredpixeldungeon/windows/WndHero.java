@@ -60,6 +60,7 @@ public class WndHero extends WndTabbed {
 	private StatsTab stats;
 	private TalentsTab talents;
 	private BuffsTab buffs;
+	private com.shatteredpixel.shatteredpixeldungeon.augments.AugTab augs;
 
 	public static int lastIdx = 0;
 
@@ -80,6 +81,15 @@ public class WndHero extends WndTabbed {
 		add( buffs );
 		buffs.setRect(0, 0, WIDTH, HEIGHT);
 		buffs.setupList();
+
+		boolean augOn = com.shatteredpixel.shatteredpixeldungeon.augments.Augs.tracker() != null;
+		if (augOn){
+			augs = new com.shatteredpixel.shatteredpixeldungeon.augments.AugTab();
+			add(augs);
+			augs.setRect(0, 0, WIDTH, HEIGHT);
+		} else if (lastIdx == 3){
+			lastIdx = 0;
+		}
 		
 		add( new IconTab( Icons.get(Icons.RANKINGS) ) {
 			protected void select( boolean value ) {
@@ -108,6 +118,15 @@ public class WndHero extends WndTabbed {
 				buffs.visible = buffs.active = selected;
 			}
 		} );
+		if (augOn){
+			add( new IconTab( com.shatteredpixel.shatteredpixeldungeon.augments.AugTab.tabIcon() ) {
+				protected void select( boolean value ) {
+					super.select( value );
+					if (selected) lastIdx = 3;
+					augs.visible = augs.active = selected;
+				}
+			} );
+		}
 
 		layoutTabs();
 
@@ -133,6 +152,7 @@ public class WndHero extends WndTabbed {
 		super.offset(xOffset, yOffset);
 		talents.layout();
 		buffs.layout();
+		if (augs != null) augs.setRect(0, 0, WIDTH, HEIGHT);
 	}
 
 	private class StatsTab extends Group {

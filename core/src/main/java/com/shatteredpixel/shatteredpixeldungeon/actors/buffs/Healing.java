@@ -94,6 +94,7 @@ public class Healing extends Buff {
 		} else {
 			bloodVialLimitingLevel = -1;
 		}
+		if (com.shatteredpixel.shatteredpixeldungeon.augments.Augs.active()) amount = com.shatteredpixel.shatteredpixeldungeon.augments.Augs.healAmount(target, amount);
 		//multiple sources of healing do not overlap, but do combine the best of their properties
 		healingLeft = Math.max(healingLeft, amount);
 		percentHealPerTick = Math.max(percentHealPerTick, percentPerTick);

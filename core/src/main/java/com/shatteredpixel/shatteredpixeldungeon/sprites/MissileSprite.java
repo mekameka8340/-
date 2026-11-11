@@ -119,6 +119,7 @@ public class MissileSprite extends ItemSprite implements Tweener.Listener {
 	private void setup( PointF from, PointF to, Item item, Callback listener ){
 
 		originToCenter();
+		com.shatteredpixel.shatteredpixeldungeon.atmosphere.Ambience.trackThrown(this);
 
 		//adjust points so they work with the center of the missile sprite, not the corner
 		from.x -= width()/2;

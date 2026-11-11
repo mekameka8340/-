@@ -344,6 +344,8 @@ public class PrisonBossLevel extends Level {
 		
 		for (Mob mob : Dungeon.level.mobs.toArray(new Mob[0])){
 			if (mob != tengu && (safeArea == null || !safeArea.inside(cellToPoint(mob.pos)))){
+				//augment summons follow the hero through the fight
+				if (com.shatteredpixel.shatteredpixeldungeon.augments.AugAllies.bring(mob, safeArea == null ? null : new com.watabou.utils.Rect(safeArea), this)) continue;
 				mob.destroy();
 				if (mob.sprite != null)
 					mob.sprite.killAndErase();

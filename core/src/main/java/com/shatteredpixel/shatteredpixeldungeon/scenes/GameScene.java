@@ -131,6 +131,9 @@ import com.watabou.glwrap.Blending;
 import com.watabou.input.ControllerHandler;
 import com.watabou.input.KeyBindings;
 import com.watabou.input.PointerEvent;
+import com.shatteredpixel.shatteredpixeldungeon.atmosphere.Atmosphere;
+import com.shatteredpixel.shatteredpixeldungeon.atmosphere.PostFX;
+import com.shatteredpixel.shatteredpixeldungeon.atmosphere.Ambience;
 import com.watabou.noosa.Camera;
 import com.watabou.noosa.Game;
 import com.watabou.noosa.Gizmo;
@@ -172,6 +175,7 @@ public class GameScene extends PixelScene {
 	private WallBlockingTilemap wallBlocking;
 	private ArrayList<Tilemap> customTilemaps = new ArrayList<>();
 	private FogOfWar fog;
+	private Atmosphere atmosphere;
 	private HeroSprite hero;
 
 	private MenuPane menu;
@@ -250,6 +254,9 @@ public class GameScene extends PixelScene {
 
 		scene = this;
 
+		//everything between these markers is rendered offscreen and post processed
+		add( new PostFX.Begin() );
+
 		terrain = new Group();
 		add( terrain );
 
@@ -273,6 +280,10 @@ public class GameScene extends PixelScene {
 		};
 		water.autoAdjust = true;
 		terrain.add( water );
+
+		//reflections lie on the water, under the ripples and the floor tiles
+		Ambience.FloorLayer floorLayer = new Ambience.FloorLayer();
+		terrain.add( floorLayer.reflections() );
 
 		ripples = new Group();
 		terrain.add( ripples );
@@ -302,6 +313,8 @@ public class GameScene extends PixelScene {
 
 		floorEmitters = new Group();
 		add(floorEmitters);
+
+		add( floorLayer );
 
 		heaps = new Group();
 		add( heaps );
@@ -349,11 +362,27 @@ public class GameScene extends PixelScene {
 		gases = new Group();
 		add( gases );
 
+		add( new Ambience.AirLayer() );
+
 		for (Blob blob : Dungeon.level.blobs.values()) {
 			blob.emitter = null;
 			addBlobSprite( blob );
 		}
 
+
+		atmosphere = new Atmosphere( Dungeon.level.width(), Dungeon.level.height() );
+		add( atmosphere );
+
+		add( new Ambience.GlowLayer() );
+		add( new Ambience.Watcher() );
+		add( new com.watabou.noosa.Gizmo(){
+			@Override
+			public void update() {
+				super.update();
+				com.shatteredpixel.shatteredpixeldungeon.augments.Augs.checkPending();
+			}
+		});
+		add( new com.shatteredpixel.shatteredpixeldungeon.augments.AugFx.Aura() );
 
 		fog = new FogOfWar( Dungeon.level.width(), Dungeon.level.height() );
 		add( fog );
@@ -362,6 +391,8 @@ public class GameScene extends PixelScene {
 		add( spells );
 
 		add(overFogEffects);
+
+		add( new PostFX.End() );
 
 		checkedCells = new Group();
 		add(checkedCells);
@@ -1504,7 +1535,7 @@ public class GameScene extends PixelScene {
 	}
 
 	public static void updateFog(){
-		if (scene != null) {
+		if (scene != null && scene.fog != null) {
 			scene.fog.updateFog();
 			scene.wallBlocking.updateMap();
 		}

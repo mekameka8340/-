@@ -117,11 +117,12 @@ public class WelcomeScene extends PixelScene {
 		align(title);
 
 		if (landscape()){
-			placeTorch(title.x + 30, title.y + 35);
-			placeTorch(title.x + title.width - 30, title.y + 35);
+			//torches set beside this mod's logo, which is wider than the original one
+			placeTorch(title.x + 18, title.y + 42);
+			placeTorch(title.x + title.width - 18, title.y + 42);
 		} else {
-			placeTorch(title.x + 16, title.y + 70);
-			placeTorch(title.x + title.width - 16, title.y + 70);
+			placeTorch(title.x + 10, title.y + 72);
+			placeTorch(title.x + title.width - 10, title.y + 72);
 		}
 
 		Image signs = new Image(BannerSprites.get( landscape() ? BannerSprites.Type.TITLE_GLOW_LAND : BannerSprites.Type.TITLE_GLOW_PORT)){

@@ -194,6 +194,7 @@ public abstract class Scroll extends Item {
 	public abstract void doRead();
 
 	public void readAnimation() {
+		com.shatteredpixel.shatteredpixeldungeon.augments.AugX.onScrollRead();
 		Invisibility.dispel();
 		curUser.spend( TIME_TO_READ );
 		curUser.busy();

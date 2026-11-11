@@ -144,6 +144,12 @@ public class Bomb extends Item {
 
 		Sample.INSTANCE.play( Assets.Sounds.BLAST );
 
+		com.shatteredpixel.shatteredpixeldungeon.atmosphere.Atmosphere.burstCell( cell, 5f, 1.8f, 0xFFA050, 0.7f );
+		com.shatteredpixel.shatteredpixeldungeon.atmosphere.Ambience.onExplosion( cell );
+		if (Dungeon.level != null && cell >= 0 && cell < Dungeon.level.length() && Dungeon.level.heroFOV[cell]) {
+			com.shatteredpixel.shatteredpixeldungeon.atmosphere.PostFX.flash( 0xFFB070, 0.22f );
+		}
+
 		if (explodesDestructively()) {
 
 			ArrayList<Integer> affectedCells = new ArrayList<>();

@@ -122,6 +122,10 @@ public class Item implements Bundlable {
 		return doPickUp( hero, hero.pos );
 	}
 
+	//set once the item has been in the hero's hands or had its drop celebrated, so the rare drop
+	// effect only plays for items that are genuinely new. not saved
+	public boolean atmoKnown = false;
+
 	public boolean doPickUp(Hero hero, int pos) {
 		if (collect( hero.belongings.backpack )) {
 			
@@ -204,6 +208,8 @@ public class Item implements Bundlable {
 	}
 	
 	public boolean collect( Bag container ) {
+
+		atmoKnown = true;
 
 		if (quantity <= 0){
 			return true;
@@ -299,6 +305,7 @@ public class Item implements Bundlable {
 			this.storeInBundle(copy);
 			split.restoreFromBundle(copy);
 			split.quantity(amount);
+			split.atmoKnown = atmoKnown;
 			quantity -= amount;
 			
 			return split;
