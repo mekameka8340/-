@@ -74,7 +74,6 @@ Windows PC에서 아래 명령을 실행하면 `desktop/build/jpackage/AugmentPD
 ```
 gradlew.bat :desktop:jpackageImage
 ```
-이 저장소에서는 `v`로 시작하는 태그를 올리면 GitHub Actions(`.github/workflows/windows.yml`)가 같은 빌드를 해서 Release에 ZIP을 붙입니다.
 
 ### 이 모드를 고쳐서 다시 배포하려면
 원작 개발자의 안내(`docs/recommended-changes.md`)를 따라 앱 이름·패키지 이름·아이콘을 자신의 것으로 바꾸고,
