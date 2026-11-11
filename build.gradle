@@ -18,6 +18,8 @@ allprojects {
         //Full releases gets +2 on version code, needed for an F-Droid quirk
         appVersionCode = 922
         appVersionName = '4.0.2'
+        //this mod's own version, shown in the game as '<mod> (SPD <base>)'
+        modVersionName = '3.7'
 
         appJavaCompatibility = JavaVersion.VERSION_11
 

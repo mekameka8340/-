@@ -19,7 +19,7 @@ android {
 
         versionCode appVersionCode
         //shown on the title screen: the mod's own version, then the Shattered version it is built on
-        versionName '3.7 (SPD ' + appVersionName + ')'
+        versionName modVersionName + ' (SPD ' + appVersionName + ')'
 
         minSdkVersion appAndroidMinSDK
         targetSdkVersion appAndroidTargetSDK

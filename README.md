@@ -18,10 +18,19 @@
 
 ## 설치
 
+### 안드로이드
+
 1. Releases에서 받은 APK를 휴대폰에서 실행합니다. (안드로이드 5.0 이상)
 2. "출처를 알 수 없는 앱" 설치 허용을 묻는다면 허용합니다.
 3. 공식 Shattered Pixel Dungeon과는 **별개의 앱**으로 설치되며, 저장 데이터도 따로 관리됩니다. 공식 판을 지울 필요가 없습니다.
 4. 이전에 받은 "SPD 분위기판" 빌드가 있다면, 그 위에 그대로 덮어 설치되고 저장 데이터도 유지됩니다.
+
+### Windows
+
+1. Releases에서 `AugmentPD-버전-windows.zip`을 받아 압축을 풉니다. (Windows 10 이상, 64비트)
+2. 풀린 `AugmentPD` 폴더 안의 `AugmentPD.exe`를 실행합니다. Java를 따로 설치할 필요는 없습니다.
+3. "Windows의 PC 보호" 창이 뜨면 *추가 정보* → *실행*을 누릅니다. 코드 서명을 하지 않은 프로그램이라 처음 실행할 때 나오는 안내입니다.
+4. 공식 Shattered Pixel Dungeon과 저장 데이터가 따로 관리됩니다. 휴대폰과 PC의 저장 데이터는 서로 이어지지 않습니다.
 
 ## 즐기는 법
 
@@ -59,6 +68,13 @@ sdk.dir=C\:\\Users\\이름\\AppData\\Local\\Android\\Sdk
 ```
 ./gradlew :desktop:debug
 ```
+
+### Windows용 exe 폴더
+Windows PC에서 아래 명령을 실행하면 `desktop/build/jpackage/AugmentPD/` 에 Java 없이 실행되는 폴더가 만들어집니다.
+```
+gradlew.bat :desktop:jpackageImage
+```
+이 저장소에서는 `v`로 시작하는 태그를 올리면 GitHub Actions(`.github/workflows/windows.yml`)가 같은 빌드를 해서 Release에 ZIP을 붙입니다.
 
 ### 이 모드를 고쳐서 다시 배포하려면
 원작 개발자의 안내(`docs/recommended-changes.md`)를 따라 앱 이름·패키지 이름·아이콘을 자신의 것으로 바꾸고,

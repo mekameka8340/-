@@ -21,7 +21,7 @@ tasks.register('debug', JavaExec) {
     mainClass = appMainClass
     systemProperty 'Specification-Title', appName
     systemProperty 'Implementation-Title', appPackageName
-    systemProperty 'Specification-Version', appVersionName + "-INDEV"
+    systemProperty 'Specification-Version', modVersionName + ' (SPD ' + appVersionName + ')-INDEV'
     systemProperty 'Implementation-Version', appVersionCode
 
     if (osName.contains('mac')) {
@@ -40,7 +40,7 @@ tasks.register('release', Jar) {
         attributes 'Main-Class': appMainClass
         attributes 'Specification-Title': appName
         attributes 'Implementation-Title': appPackageName
-        attributes 'Specification-Version': appVersionName
+        attributes 'Specification-Version': modVersionName + ' (SPD ' + appVersionName + ')'
         attributes 'Implementation-Version': appVersionCode
     }
 }
