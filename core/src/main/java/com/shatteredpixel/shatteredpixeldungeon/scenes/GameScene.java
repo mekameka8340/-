@@ -1057,7 +1057,9 @@ public class GameScene extends PixelScene {
 				scene.skillBar.setPos( sx, scene.toolbar.top() - sh - 1 );
 				y -= sh + 1;
 			} else {
-				scene.skillBar.setPos( (uiCamera.width - sw) / 2f, scene.toolbar.top() - sh - 1 );
+				//full interface: bottom left, right above the hero's portrait and health, the log moves up
+				scene.skillBar.setPos( insets.left + 1, scene.status.top() - sh - 1 );
+				y -= sh + 1;
 			}
 		}
 		if (SPDSettings.interfaceSize() == 0){
